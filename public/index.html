@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vision Board</title>
+    <link rel="stylesheet" href="css/main.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/2.7.1/svg.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <h1>Vision Board</h1>
+            <div class="toolbar">
+                <input type="file" id="file-input" accept="image/*" multiple style="display: none;">
+                <button id="upload-btn">Add Images</button>
+                <button id="save-btn">Save</button>
+            </div>
+        </header>
+        
+        <main class="main-content">
+            <div class="canvas-container">
+                <div id="canvas" class="canvas"></div>
+                <div id="drop-zone" class="drop-zone">
+                    <p>Drop images here or click "Add Images" to upload</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/canvas.js"></script>
+    <script src="js/drag-drop.js"></script>
+    <script src="js/touch.js"></script>
+    <script>
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeCanvas();
+            initializeDragDrop();
+            loadCanvas('main');
+        });
+    </script>
+</body>
+</html>
