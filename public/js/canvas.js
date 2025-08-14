@@ -85,31 +85,34 @@ function addFolderToCanvas(folderData) {
     // Create folder group
     const group = canvas.group();
     
-    // Create folder background
+    // Create folder background (positioned relative to group origin)
     const rect = group.rect(folderData.width, folderData.height)
-        .move(folderData.x, folderData.y)
+        .move(0, 0)  // Position relative to group
         .fill('#FFF3E0')
         .stroke('#FF9800')
         .stroke({ width: 2 })
         .radius(8);
     
-    // Create folder icon
+    // Create folder icon (positioned relative to group origin)
     const iconSize = Math.min(folderData.width, folderData.height) * 0.3;
-    const iconX = folderData.x + (folderData.width - iconSize) / 2;
-    const iconY = folderData.y + folderData.height * 0.2;
+    const iconX = (folderData.width - iconSize) / 2;
+    const iconY = folderData.height * 0.2;
     
     const folderIcon = group.text('📁')
         .move(iconX, iconY)
         .font({ size: iconSize, anchor: 'middle' })
         .attr('pointer-events', 'none'); // Prevent text from intercepting clicks
     
-    // Create folder label
+    // Create folder label (positioned relative to group origin)
     const labelY = iconY + iconSize + 10;
     const label = group.text(folderData.name)
-        .move(folderData.x + folderData.width / 2, labelY)
+        .move(folderData.width / 2, labelY)
         .font({ size: 14, anchor: 'middle', weight: 'bold' })
         .fill('#333')
         .attr('pointer-events', 'none'); // Prevent text from intercepting clicks
+    
+    // Position the entire group
+    group.move(folderData.x, folderData.y);
     
     // Store the element data
     group.data('elementData', folderData);
@@ -340,14 +343,23 @@ function resizeElement(element, handleIndex, handle) {
 }
 
 function updateElementPosition(element) {
-    const bbox = element.bbox();
     const elementData = element.data('elementData');
     
     if (elementData) {
-        elementData.x = bbox.x;
-        elementData.y = bbox.y;
-        elementData.width = bbox.width;
-        elementData.height = bbox.height;
+        // Update position for all elements
+        elementData.x = element.x();
+        elementData.y = element.y();
+        
+        // For folders (groups), preserve original dimensions since groups don't have intrinsic size
+        // For images, update dimensions from the actual element
+        if (elementData.type === 'folder') {
+            // Keep original width and height for folders
+            // elementData.width and elementData.height remain unchanged
+        } else {
+            // For images, update dimensions
+            elementData.width = element.width();
+            elementData.height = element.height();
+        }
         
         // Update in canvas data
         const index = currentCanvas.elements.findIndex(el => el.id === elementData.id);
