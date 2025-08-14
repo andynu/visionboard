@@ -1,0 +1,25 @@
+{
+  "rootCanvases": [
+    "main"
+  ],
+  "canvases": {
+    "main": {
+      "name": "Main Canvas",
+      "children": [
+        "7da80994-8fbf-4ea5-a7ff-d893a6981e48",
+        "a3816d10-1e58-4887-bf18-235f71195c81"
+      ],
+      "parent": null
+    },
+    "7da80994-8fbf-4ea5-a7ff-d893a6981e48": {
+      "name": "Child Canvas",
+      "children": [],
+      "parent": "main"
+    },
+    "a3816d10-1e58-4887-bf18-235f71195c81": {
+      "name": "Fixed Folder",
+      "children": [],
+      "parent": "main"
+    }
+  }
+}

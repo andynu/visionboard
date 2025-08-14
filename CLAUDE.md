@@ -1,0 +1,94 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Development Commands
+
+### Server Management
+- `npm start` - Start the server on port 3001 (production mode)
+- `npm run dev` - Start the server in development mode (same as start)
+- Server serves on `http://0.0.0.0:3001` and accepts connections from other devices
+
+### Testing
+- Uses Playwright for browser automation tests
+- Run individual test files: `node test-[name].js` (e.g., `node test-visit.js`)
+- Tests are not integrated into npm scripts; must be run manually
+- Test files include: visit, upload, resize, hierarchy, breadcrumb, folder-nav functionality
+
+### Project Structure
+
+```
+server/app.js           # Main Express server with canvas CRUD API
+server/routes/files.js  # Image upload handling (multer + UUID)
+server/routes/tree.js   # Canvas tree/hierarchy management
+server/storage/         # File-based persistence
+  ├── canvases/         # JSON canvas definitions
+  ├── images/           # Uploaded image files
+  └── tree.json         # Canvas hierarchy structure
+
+public/                 # Static frontend assets
+  ├── index.html        # Main application page
+  ├── css/main.css      # Application styles
+  └── js/               # Frontend JavaScript modules
+      ├── canvas.js     # SVG.js canvas management & element interactions
+      ├── drag-drop.js  # File upload & drag-and-drop handling
+      ├── tree-nav.js   # Sidebar navigation & canvas switching
+      └── touch.js      # Mobile/tablet touch interactions
+```
+
+## Architecture Overview
+
+**Vision Board Application**: Web-based canvas tool for organizing images and creating hierarchical boards
+
+### Core Technologies
+- **Backend**: Express.js server with file-based JSON storage
+- **Frontend**: Vanilla JavaScript + SVG.js for canvas manipulation
+- **File Handling**: Multer for uploads, UUID for unique naming
+- **Canvas System**: Hierarchical canvases with parent/child relationships
+
+### Key Architectural Patterns
+
+#### Canvas Data Model
+- Each canvas stored as individual JSON file in `server/storage/canvases/`
+- Canvas structure: `{ id, name, parentId, elements[], viewBox, created, modified }`
+- Elements include images and folder objects that link to child canvases
+- Tree hierarchy maintained separately in `tree.json`
+
+#### API Design
+- RESTful canvas operations: GET/POST/PUT/DELETE `/api/canvas/:id`
+- Tree management: `/api/tree` endpoints for hierarchy operations
+- Image serving: `/api/images/:filename` for uploaded files
+- File upload: `/api/upload` and `/api/upload-multiple`
+
+#### Frontend Architecture
+- SVG.js handles canvas rendering and element interactions
+- Modular JavaScript: separate files for canvas, navigation, drag-drop, touch
+- Element selection/dragging system with resize handles
+- Real-time canvas updates with auto-save functionality
+
+### Storage Strategy
+- File-based persistence in `server/storage/` directory
+- Images stored with UUID filenames to prevent conflicts
+- Canvas definitions stored as formatted JSON for readability
+- Tree structure cached for performance during navigation
+
+### Canvas Element System
+- **Images**: Positioned rectangles with drag/resize/rotation support
+- **Folders**: Special elements that link to child canvases for navigation
+- **Selection System**: Click to select, drag to move, corner handles for resize
+- **Auto-save**: Debounced saves prevent data loss during editing
+
+### Navigation Features
+- Sidebar tree navigator with expand/collapse functionality
+- Breadcrumb navigation showing current canvas path
+- Canvas switching without page reload
+- Parent/child canvas relationships with folder objects
+
+## Development Notes
+
+- Default canvas "main" is created automatically on first server start
+- Server accepts connections from network devices for mobile testing
+- No build process required; serves static files directly
+- Uses SVG.js v2.7.1 from CDN
+- Touch interactions optimized for iPad/tablet usage
+- File uploads limited to 10MB with image type validation

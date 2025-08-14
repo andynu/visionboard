@@ -1,0 +1,26 @@
+{
+  "id": "26ceeb08-91e9-45ed-a7d1-8b7022459ec1",
+  "name": "Test Folder",
+  "parentId": "main",
+  "created": "2025-08-14T22:31:37.595Z",
+  "modified": "2025-08-14T22:39:27.527Z",
+  "viewBox": {
+    "x": 0,
+    "y": 0,
+    "width": 1920,
+    "height": 1080
+  },
+  "elements": [
+    {
+      "id": "element-42fn8rqak",
+      "type": "image",
+      "src": "/api/images/8a250df5-c612-428f-b932-373620fa22d7.png",
+      "x": 600.9263916015625,
+      "y": 137.92916870117188,
+      "width": 283.720947265625,
+      "height": 400.0000305175781,
+      "rotation": 0,
+      "zIndex": 1
+    }
+  ]
+}

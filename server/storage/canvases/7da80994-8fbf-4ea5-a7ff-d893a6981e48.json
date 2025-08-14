@@ -1,0 +1,14 @@
+{
+  "id": "7da80994-8fbf-4ea5-a7ff-d893a6981e48",
+  "name": "Child Canvas",
+  "parentId": "main",
+  "created": "2025-08-14T22:37:34.551Z",
+  "modified": "2025-08-14T22:37:34.551Z",
+  "viewBox": {
+    "x": 0,
+    "y": 0,
+    "width": 1920,
+    "height": 1080
+  },
+  "elements": []
+}
