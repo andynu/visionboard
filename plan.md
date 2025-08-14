@@ -281,8 +281,11 @@ This plan prioritizes getting a working product quickly while maintaining clear 
 
 
 ## wishlist
-- browser back button support
+- ✅ browser back button support
 - export entire board to png
 - export entire board to json /w encoded embedded images
 - load a board from that embedded image json format.
-- 
+- delete image
+- delete folder (with confirmation if it has contents)
+- auto-arrange (non overlapping tight pack)
+- autosave (on drag, on image add, on image resize)

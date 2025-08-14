@@ -5,6 +5,7 @@ let expandedNodes = new Set(['main']); // Track expanded nodes
 function initializeTreeNav() {
     setupSidebarToggle();
     setupTreeEventListeners();
+    setupBrowserHistory();
     loadTreeData();
 }
 
@@ -38,11 +39,54 @@ function setupTreeEventListeners() {
     });
 }
 
+function setupBrowserHistory() {
+    // Listen for browser back/forward buttons
+    window.addEventListener('popstate', (event) => {
+        if (event.state && event.state.canvasId) {
+            // Navigate to the canvas without pushing new history
+            switchToCanvasInternal(event.state.canvasId, false);
+        } else {
+            // Default to main canvas if no state
+            switchToCanvasInternal('main', false);
+        }
+    });
+    
+    // Set initial history state on page load
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialCanvasId = urlParams.get('canvas') || 'main';
+    
+    // Replace current state to ensure we have a proper history entry
+    history.replaceState(
+        { canvasId: initialCanvasId }, 
+        '', 
+        `${window.location.pathname}?canvas=${initialCanvasId}`
+    );
+    
+    currentCanvasId = initialCanvasId;
+}
+
 async function loadTreeData() {
     try {
         const response = await fetch('/api/tree');
         if (response.ok) {
             treeData = await response.json();
+            
+            // Load the initial canvas (from URL or default to main)
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetCanvasId = urlParams.get('canvas') || currentCanvasId || 'main';
+            
+            // Verify the canvas exists in the tree, fallback to main if not
+            if (treeData.canvases[targetCanvasId]) {
+                currentCanvasId = targetCanvasId;
+            } else {
+                currentCanvasId = 'main';
+                // Update URL to reflect the fallback
+                const url = `${window.location.pathname}?canvas=main`;
+                history.replaceState({ canvasId: 'main' }, '', url);
+            }
+            
+            // Load the canvas and update UI
+            await loadCanvas(currentCanvasId);
             renderTree();
             updateBreadcrumb();
         } else {
@@ -170,11 +214,25 @@ function toggleNode(canvasId) {
 }
 
 async function switchToCanvas(canvasId) {
+    return switchToCanvasInternal(canvasId, true);
+}
+
+async function switchToCanvasInternal(canvasId, pushHistory = true) {
     try {
         currentCanvasId = canvasId;
         await loadCanvas(canvasId);
         renderTree(); // Re-render to update active state
         updateBreadcrumb();
+        
+        // Update browser history and URL
+        if (pushHistory) {
+            const url = `${window.location.pathname}?canvas=${canvasId}`;
+            history.pushState(
+                { canvasId: canvasId }, 
+                '', 
+                url
+            );
+        }
         
         // Close sidebar on mobile
         if (window.innerWidth < 768) {
