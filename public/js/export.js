@@ -1,5 +1,8 @@
 // Export functionality for Vision Board
 
+// Global tracking for imported canvas names during session
+let importedNamesThisSession = new Set();
+
 function initializeExport() {
     setupExportButton();
 }
@@ -7,6 +10,7 @@ function initializeExport() {
 function setupExportButton() {
     const exportBtn = document.getElementById('export-btn');
     const exportJsonBtn = document.getElementById('export-json-btn');
+    const importJsonBtn = document.getElementById('import-json-btn');
     
     if (exportBtn) {
         exportBtn.addEventListener('click', exportCanvasToPNG);
@@ -14,6 +18,10 @@ function setupExportButton() {
     
     if (exportJsonBtn) {
         exportJsonBtn.addEventListener('click', exportCanvasToJSON);
+    }
+    
+    if (importJsonBtn) {
+        importJsonBtn.addEventListener('click', importCanvasFromJSON);
     }
 }
 
@@ -189,13 +197,35 @@ function getCurrentCanvasName() {
     return new Date().toISOString().slice(0, 10);
 }
 
-function exportCanvasToJSON() {
+async function exportCanvasToJSON() {
     try {
         // Get current canvas data
         if (!window.currentCanvas) {
             alert('No canvas data found to export');
             return;
         }
+
+        // Clone elements and convert image URLs to base64
+        const elementsWithEmbeddedImages = await Promise.all(
+            (window.currentCanvas.elements || []).map(async (element) => {
+                if (element.type === 'image' && element.src && !element.src.startsWith('data:')) {
+                    try {
+                        // Convert relative URLs to absolute
+                        const absoluteUrl = new URL(element.src, window.location.origin).href;
+                        const base64Data = await imageToDataUrl(absoluteUrl);
+                        return {
+                            ...element,
+                            src: base64Data
+                        };
+                    } catch (error) {
+                        console.warn('Failed to embed image:', element.src, error);
+                        // Keep original URL if conversion fails
+                        return element;
+                    }
+                }
+                return element;
+            })
+        );
 
         // Create export data with metadata
         const exportData = {
@@ -205,7 +235,7 @@ function exportCanvasToJSON() {
                 id: window.currentCanvas.id,
                 name: window.currentCanvas.name || 'Untitled Canvas',
                 parentId: window.currentCanvas.parentId || null,
-                elements: window.currentCanvas.elements || [],
+                elements: elementsWithEmbeddedImages,
                 viewBox: window.currentCanvas.viewBox || "0 0 1920 1080",
                 created: window.currentCanvas.created,
                 modified: window.currentCanvas.modified
@@ -231,7 +261,209 @@ function exportCanvasToJSON() {
     }
 }
 
+function importCanvasFromJSON() {
+    try {
+        // Create file input element
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json,application/json';
+        input.style.display = 'none';
+        
+        input.onchange = async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            try {
+                const text = await file.text();
+                const importData = JSON.parse(text);
+                
+                // Validate the imported data structure
+                if (!validateImportData(importData)) {
+                    alert('Invalid JSON format. Please select a valid Vision Board export file.');
+                    return;
+                }
+                
+                // Create new canvas from imported data
+                await createCanvasFromImport(importData);
+                
+            } catch (error) {
+                console.error('Import error:', error);
+                alert('Failed to import JSON file: ' + error.message);
+            } finally {
+                // Clean up the input element
+                document.body.removeChild(input);
+            }
+        };
+        
+        // Add to DOM and trigger click
+        document.body.appendChild(input);
+        input.click();
+        
+    } catch (error) {
+        console.error('JSON import error:', error);
+        alert('Failed to import JSON: ' + error.message);
+    }
+}
+
+function validateImportData(data) {
+    // Check for required top-level properties
+    if (!data || typeof data !== 'object') return false;
+    if (!data.version || !data.canvas) return false;
+    
+    const canvas = data.canvas;
+    
+    // Check for required canvas properties
+    if (!canvas.id || !canvas.name) return false;
+    if (!Array.isArray(canvas.elements)) return false;
+    
+    // Validate elements structure
+    for (const element of canvas.elements) {
+        if (!element.id || !element.type) return false;
+        if (typeof element.x !== 'number' || typeof element.y !== 'number') return false;
+        if (typeof element.width !== 'number' || typeof element.height !== 'number') return false;
+        
+        // Type-specific validation
+        if (element.type === 'image' && !element.src) return false;
+        if (element.type === 'folder' && (!element.name || !element.targetCanvasId)) return false;
+    }
+    
+    return true;
+}
+
+async function generateUniqueCanvasName(baseName) {
+    try {
+        // Get all existing canvas names from multiple sources
+        const existingNames = new Set();
+        
+        // 1. Get names from tree data
+        try {
+            const treeResponse = await fetch('/api/tree');
+            if (treeResponse.ok) {
+                const treeData = await treeResponse.json();
+                if (treeData.canvases) {
+                    Object.values(treeData.canvases).forEach(canvas => {
+                        if (canvas.name) {
+                            existingNames.add(canvas.name);
+                        }
+                    });
+                }
+            }
+        } catch (error) {
+            console.warn('Could not fetch tree data:', error);
+        }
+        
+        // 2. Also check by trying to create candidates and seeing if they would conflict
+        // Start with the base name and check if it's available
+        let counter = 1;
+        let candidateName = baseName;
+        
+        // Also check against names imported this session
+        importedNamesThisSession.forEach(name => existingNames.add(name));
+        
+        // Keep trying until we find a name that's not in our set
+        while (existingNames.has(candidateName)) {
+            counter++;
+            candidateName = `${baseName} (${counter})`;
+            
+            // Safety limit to prevent infinite loops
+            if (counter > 100) {
+                candidateName = `${baseName} (${Date.now()})`;
+                break;
+            }
+        }
+        
+        // Track this name for the session to prevent future conflicts
+        importedNamesThisSession.add(candidateName);
+        
+        return candidateName;
+        
+    } catch (error) {
+        console.warn('Error generating unique canvas name:', error);
+        // Fallback: add timestamp to ensure uniqueness
+        return `${baseName} (${Date.now()})`;
+    }
+}
+
+async function createCanvasFromImport(importData) {
+    try {
+        const canvasData = importData.canvas;
+        
+        // Generate new ID for imported canvas to avoid conflicts
+        const newCanvasId = generateUniqueId();
+        
+        // Get unique name to avoid collisions
+        const uniqueName = await generateUniqueCanvasName(`${canvasData.name} (Imported)`);
+        
+        const importedCanvas = {
+            id: newCanvasId,
+            name: uniqueName,
+            parentId: canvasData.parentId || null,
+            elements: canvasData.elements || [],
+            viewBox: canvasData.viewBox || "0 0 1920 1080",
+            created: new Date().toISOString(),
+            modified: new Date().toISOString(),
+            version: "1.0.0"
+        };
+        
+        // Create the canvas on the server using PUT to preserve all data
+        const response = await fetch(`/api/canvas/${newCanvasId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(importedCanvas)
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to create imported canvas on server: ${response.status} - ${errorText}`);
+        }
+        
+        // Add the canvas to the tree structure so it appears in navigation
+        const treeResponse = await fetch('/api/tree/canvas', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                canvasId: newCanvasId,
+                parentId: importedCanvas.parentId,
+                name: importedCanvas.name
+            })
+        });
+        
+        if (!treeResponse.ok) {
+            console.warn('Failed to add canvas to tree structure, but canvas was created');
+        }
+        
+        // Refresh the tree navigation to show the new canvas
+        if (window.loadTreeData) {
+            await window.loadTreeData();
+        }
+        
+        // Navigate to the new canvas after tree is updated
+        if (window.switchToCanvas) {
+            window.switchToCanvas(newCanvasId);
+        }
+        
+        alert(`Canvas "${importedCanvas.name}" imported successfully!`);
+        
+    } catch (error) {
+        console.error('Error creating canvas from import:', error);
+        throw new Error('Failed to create canvas from imported data: ' + error.message);
+    }
+}
+
+function generateUniqueId() {
+    return 'canvas-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+}
+
 // Export functions for use by other modules
 window.exportCanvasToPNG = exportCanvasToPNG;
 window.exportCanvasToJSON = exportCanvasToJSON;
+window.importCanvasFromJSON = importCanvasFromJSON;
+window.generateUniqueId = generateUniqueId;
+window.generateUniqueCanvasName = generateUniqueCanvasName;
+window.validateImportData = validateImportData;
+window.createCanvasFromImport = createCanvasFromImport;
 window.initializeExport = initializeExport;

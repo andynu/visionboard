@@ -9,7 +9,7 @@ const treeRouter = require('./routes/tree');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.use('/api', filesRouter);
@@ -18,6 +18,7 @@ app.use('/api', treeRouter);
 const STORAGE_DIR = path.join(__dirname, 'storage');
 const CANVASES_DIR = path.join(STORAGE_DIR, 'canvases');
 const IMAGES_DIR = path.join(STORAGE_DIR, 'images');
+const PID_FILE = path.join(__dirname, '../server.pid');
 
 async function ensureStorageDirectories() {
   try {
@@ -115,8 +116,41 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
+async function writePidFile() {
+  try {
+    await fs.writeFile(PID_FILE, process.pid.toString());
+    console.log(`PID ${process.pid} written to ${PID_FILE}`);
+  } catch (error) {
+    console.error('Error writing PID file:', error);
+  }
+}
+
+async function removePidFile() {
+  try {
+    await fs.unlink(PID_FILE);
+    console.log('PID file removed');
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      console.error('Error removing PID file:', error);
+    }
+  }
+}
+
+process.on('SIGTERM', async () => {
+  console.log('Received SIGTERM signal');
+  await removePidFile();
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  console.log('Received SIGINT signal');
+  await removePidFile();
+  process.exit(0);
+});
+
 async function startServer() {
   await ensureStorageDirectories();
+  await writePidFile();
   
   const defaultCanvasPath = path.join(CANVASES_DIR, 'main.json');
   try {
@@ -135,9 +169,10 @@ async function startServer() {
     await fs.writeFile(defaultCanvasPath, JSON.stringify(defaultCanvas, null, 2));
   }
   
-  app.listen(PORT, '0.0.0.0', (err) => {
+  app.listen(PORT, '0.0.0.0', async (err) => {
     if (err) {
       console.error(`Error starting server: ${err.message}`);
+      await removePidFile();
       process.exit(1);
     }
     console.log(`Vision Board server running at http://0.0.0.0:${PORT}`);
