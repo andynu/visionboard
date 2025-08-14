@@ -54,6 +54,8 @@ function renderCanvas() {
     currentCanvas.elements.forEach(element => {
         if (element.type === 'image') {
             addImageToCanvas(element);
+        } else if (element.type === 'folder') {
+            addFolderToCanvas(element);
         }
     });
     
@@ -77,6 +79,129 @@ function addImageToCanvas(imageData) {
     makeElementInteractive(image);
     
     return image;
+}
+
+function addFolderToCanvas(folderData) {
+    // Create folder group
+    const group = canvas.group();
+    
+    // Create folder background
+    const rect = group.rect(folderData.width, folderData.height)
+        .move(folderData.x, folderData.y)
+        .fill('#FFF3E0')
+        .stroke('#FF9800')
+        .stroke({ width: 2 })
+        .radius(8);
+    
+    // Create folder icon
+    const iconSize = Math.min(folderData.width, folderData.height) * 0.3;
+    const iconX = folderData.x + (folderData.width - iconSize) / 2;
+    const iconY = folderData.y + folderData.height * 0.2;
+    
+    const folderIcon = group.text('📁')
+        .move(iconX, iconY)
+        .font({ size: iconSize, anchor: 'middle' });
+    
+    // Create folder label
+    const labelY = iconY + iconSize + 10;
+    const label = group.text(folderData.name)
+        .move(folderData.x + folderData.width / 2, labelY)
+        .font({ size: 14, anchor: 'middle', weight: 'bold' })
+        .fill('#333');
+    
+    // Store the element data
+    group.data('elementData', folderData);
+    
+    // Make folder interactive
+    makeFolderInteractive(group);
+    
+    return group;
+}
+
+function makeFolderInteractive(element) {
+    element.addClass('canvas-element folder-element');
+    
+    // Create resize handles group
+    const resizeHandles = createResizeHandles(element);
+    
+    // Click to select
+    element.click((event) => {
+        event.stopPropagation();
+        selectElement(element);
+    });
+    
+    // Double-click to navigate to folder canvas
+    element.dblclick((event) => {
+        event.stopPropagation();
+        const folderData = element.data('elementData');
+        if (folderData.targetCanvasId && window.switchToCanvas) {
+            window.switchToCanvas(folderData.targetCanvasId);
+        }
+    });
+    
+    // Add folder-specific styling
+    element.mouseover(() => {
+        resizeHandles.addClass('visible');
+        element.find('rect').first().stroke({ width: 3 });
+    });
+    
+    element.mouseout(() => {
+        if (!resizeHandles.hasClass('dragging')) {
+            resizeHandles.removeClass('visible');
+        }
+        element.find('rect').first().stroke({ width: 2 });
+    });
+    
+    // Make draggable (same as images)
+    let dragData = { offsetX: 0, offsetY: 0 };
+    
+    element.mousedown((event) => {
+        // Don't start dragging if we're clicking on a resize handle
+        if (isResizing) return;
+        
+        event.preventDefault();
+        event.stopPropagation();
+        isDragging = true;
+        
+        // Get SVG point for accurate coordinate conversion
+        const svg = canvas.node;
+        const pt = svg.createSVGPoint();
+        pt.x = event.clientX;
+        pt.y = event.clientY;
+        const svgPt = pt.matrixTransform(svg.getScreenCTM().inverse());
+        
+        // Calculate offset from mouse to element origin
+        dragData.offsetX = svgPt.x - element.x();
+        dragData.offsetY = svgPt.y - element.y();
+        
+        const mousemove = (e) => {
+            if (isDragging) {
+                // Convert mouse position to SVG coordinates
+                pt.x = e.clientX;
+                pt.y = e.clientY;
+                const currentSvgPt = pt.matrixTransform(svg.getScreenCTM().inverse());
+                
+                // Move element maintaining the original offset
+                element.move(
+                    currentSvgPt.x - dragData.offsetX,
+                    currentSvgPt.y - dragData.offsetY
+                );
+                
+                // Update resize handles position
+                updateResizeHandles(element, resizeHandles);
+            }
+        };
+        
+        const mouseup = () => {
+            isDragging = false;
+            updateElementPosition(element);
+            document.removeEventListener('mousemove', mousemove);
+            document.removeEventListener('mouseup', mouseup);
+        };
+        
+        document.addEventListener('mousemove', mousemove);
+        document.addEventListener('mouseup', mouseup);
+    });
 }
 
 function makeElementInteractive(element) {
@@ -306,8 +431,79 @@ function generateId() {
     return 'element-' + Math.random().toString(36).substr(2, 9);
 }
 
+function showNewFolderDialog() {
+    const name = prompt('Enter folder name:', 'New Folder');
+    if (name) {
+        addFolderFromDialog(name);
+    }
+}
+
+async function addFolderFromDialog(name) {
+    try {
+        // First create a new canvas for this folder
+        const response = await fetch('/api/canvas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                name: name,
+                parentId: currentCanvas ? currentCanvas.id : null
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to create canvas for folder');
+        }
+        
+        const childCanvas = await response.json();
+        
+        // Add canvas to tree
+        if (window.treeData) {
+            await fetch('/api/tree/canvas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    canvasId: childCanvas.id, 
+                    parentId: currentCanvas ? currentCanvas.id : null,
+                    name: name
+                })
+            });
+        }
+        
+        // Create folder element data
+        const folderData = {
+            id: generateId(),
+            type: 'folder',
+            name: name,
+            targetCanvasId: childCanvas.id,
+            x: 200 + (currentCanvas.elements.length * 20),
+            y: 200 + (currentCanvas.elements.length * 20),
+            width: 120,
+            height: 100,
+            rotation: 0,
+            zIndex: currentCanvas.elements.length + 1
+        };
+        
+        // Add to current canvas
+        currentCanvas.elements.push(folderData);
+        
+        // Add to SVG canvas
+        addFolderToCanvas(folderData);
+        
+        // Save canvas
+        scheduleAutoSave();
+        
+        // Hide drop zone if needed
+        hideDropZoneIfNeeded();
+        
+    } catch (error) {
+        console.error('Error creating folder:', error);
+        alert('Failed to create folder');
+    }
+}
+
 // Event listeners
 document.getElementById('save-btn').addEventListener('click', saveCanvas);
+document.getElementById('new-folder-btn').addEventListener('click', showNewFolderDialog);
 
 // Keyboard shortcuts
 document.addEventListener('keydown', (event) => {

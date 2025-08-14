@@ -4,6 +4,7 @@ const fs = require('fs').promises;
 const { v4: uuidv4 } = require('uuid');
 
 const filesRouter = require('./routes/files');
+const treeRouter = require('./routes/tree');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -12,6 +13,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.use('/api', filesRouter);
+app.use('/api', treeRouter);
 
 const STORAGE_DIR = path.join(__dirname, 'storage');
 const CANVASES_DIR = path.join(STORAGE_DIR, 'canvases');
@@ -73,6 +75,20 @@ app.put('/api/canvas/:id', async (req, res) => {
     res.json(canvas);
   } catch (error) {
     res.status(500).json({ error: 'Failed to update canvas' });
+  }
+});
+
+app.delete('/api/canvas/:id', async (req, res) => {
+  try {
+    const canvasPath = path.join(CANVASES_DIR, `${req.params.id}.json`);
+    await fs.unlink(canvasPath);
+    res.json({ success: true });
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      res.status(404).json({ error: 'Canvas not found' });
+    } else {
+      res.status(500).json({ error: 'Failed to delete canvas' });
+    }
   }
 });
 

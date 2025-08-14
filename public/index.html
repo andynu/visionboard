@@ -10,32 +10,56 @@
 <body>
     <div class="app-container">
         <header class="header">
-            <h1>Vision Board</h1>
+            <div class="header-left">
+                <button id="sidebar-toggle" class="sidebar-toggle">☰</button>
+                <h1>Vision Board</h1>
+                <nav class="breadcrumb" id="breadcrumb">
+                    <span class="breadcrumb-item active">Main Canvas</span>
+                </nav>
+            </div>
             <div class="toolbar">
                 <input type="file" id="file-input" accept="image/*" multiple style="display: none;">
                 <button id="upload-btn">Add Images</button>
+                <button id="new-folder-btn">New Folder</button>
+                <button id="new-canvas-btn">New Canvas</button>
                 <button id="save-btn">Save</button>
             </div>
         </header>
         
-        <main class="main-content">
-            <div class="canvas-container">
-                <div id="canvas" class="canvas"></div>
-                <div id="drop-zone" class="drop-zone">
-                    <p>Drop images here or click "Add Images" to upload</p>
+        <div class="app-body">
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-header">
+                    <h3>Canvas Navigator</h3>
+                    <button id="sidebar-close" class="sidebar-close">×</button>
                 </div>
-            </div>
-        </main>
+                <div class="tree-container">
+                    <div id="canvas-tree" class="canvas-tree">
+                        <!-- Tree will be populated by JavaScript -->
+                    </div>
+                </div>
+            </aside>
+            
+            <main class="main-content">
+                <div class="canvas-container">
+                    <div id="canvas" class="canvas"></div>
+                    <div id="drop-zone" class="drop-zone">
+                        <p>Drop images here or click "Add Images" to upload</p>
+                    </div>
+                </div>
+            </main>
+        </div>
     </div>
 
     <script src="js/canvas.js"></script>
     <script src="js/drag-drop.js"></script>
+    <script src="js/tree-nav.js"></script>
     <script src="js/touch.js"></script>
     <script>
         // Initialize the application
         document.addEventListener('DOMContentLoaded', () => {
             initializeCanvas();
             initializeDragDrop();
+            initializeTreeNav();
             loadCanvas('main');
         });
     </script>
