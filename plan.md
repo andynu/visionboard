@@ -278,3 +278,11 @@ mkdir -p server/routes public/{css,js} server/storage/{canvases,images}
 - Cross-platform desktop wrapper complexity (mitigation: web-first approach)
 
 This plan prioritizes getting a working product quickly while maintaining clear upgrade paths for advanced features.
+
+
+## wishlist
+- browser back button support
+- export entire board to png
+- export entire board to json /w encoded embedded images
+- load a board from that embedded image json format.
+- 

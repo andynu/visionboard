@@ -100,14 +100,16 @@ function addFolderToCanvas(folderData) {
     
     const folderIcon = group.text('📁')
         .move(iconX, iconY)
-        .font({ size: iconSize, anchor: 'middle' });
+        .font({ size: iconSize, anchor: 'middle' })
+        .attr('pointer-events', 'none'); // Prevent text from intercepting clicks
     
     // Create folder label
     const labelY = iconY + iconSize + 10;
     const label = group.text(folderData.name)
         .move(folderData.x + folderData.width / 2, labelY)
         .font({ size: 14, anchor: 'middle', weight: 'bold' })
-        .fill('#333');
+        .fill('#333')
+        .attr('pointer-events', 'none'); // Prevent text from intercepting clicks
     
     // Store the element data
     group.data('elementData', folderData);
@@ -457,16 +459,19 @@ async function addFolderFromDialog(name) {
         const childCanvas = await response.json();
         
         // Add canvas to tree
-        if (window.treeData) {
-            await fetch('/api/tree/canvas', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    canvasId: childCanvas.id, 
-                    parentId: currentCanvas ? currentCanvas.id : null,
-                    name: name
-                })
-            });
+        await fetch('/api/tree/canvas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                canvasId: childCanvas.id, 
+                parentId: currentCanvas ? currentCanvas.id : null,
+                name: name
+            })
+        });
+        
+        // Reload tree data to update navigation
+        if (window.loadTreeData) {
+            await window.loadTreeData();
         }
         
         // Create folder element data

@@ -189,7 +189,14 @@ function updateBreadcrumb() {
     const breadcrumb = document.getElementById('breadcrumb');
     breadcrumb.innerHTML = '';
     
-    if (!treeData || !treeData.canvases[currentCanvasId]) return;
+    if (!treeData || !treeData.canvases[currentCanvasId]) {
+        // Show default breadcrumb when no tree data
+        const defaultItem = document.createElement('span');
+        defaultItem.className = 'breadcrumb-item active';
+        defaultItem.textContent = 'Main Canvas';
+        breadcrumb.appendChild(defaultItem);
+        return;
+    }
     
     const path = getCanvasPath(currentCanvasId);
     
@@ -197,23 +204,63 @@ function updateBreadcrumb() {
         const canvasInfo = treeData.canvases[canvasId];
         if (!canvasInfo) return;
         
+        // Add separator
         if (index > 0) {
             const separator = document.createElement('span');
             separator.className = 'breadcrumb-separator';
-            separator.textContent = ' / ';
             breadcrumb.appendChild(separator);
         }
         
+        // Create breadcrumb item
         const item = document.createElement('span');
-        item.className = `breadcrumb-item ${index === path.length - 1 ? 'active' : ''}`;
-        item.textContent = canvasInfo.name;
+        const isActive = index === path.length - 1;
+        item.className = `breadcrumb-item ${isActive ? 'active' : ''}`;
         
-        if (index < path.length - 1) {
-            item.addEventListener('click', () => switchToCanvas(canvasId));
+        // Add icon based on position and type
+        const icon = document.createElement('span');
+        icon.style.marginRight = '0.25rem';
+        if (index === 0) {
+            icon.textContent = '🏠'; // Home icon for root
+        } else if (canvasInfo.children.length > 0) {
+            icon.textContent = '📁'; // Folder icon for containers
+        } else {
+            icon.textContent = '📄'; // Document icon for leaves
+        }
+        
+        const label = document.createElement('span');
+        label.textContent = canvasInfo.name;
+        
+        item.appendChild(icon);
+        item.appendChild(label);
+        
+        // Add click handler for non-active items
+        if (!isActive) {
+            item.addEventListener('click', () => {
+                switchToCanvas(canvasId);
+            });
+            item.title = `Navigate to ${canvasInfo.name}`;
+        } else {
+            item.title = `Current canvas: ${canvasInfo.name}`;
         }
         
         breadcrumb.appendChild(item);
     });
+    
+    // Add quick actions for current canvas if it has children
+    const currentCanvasInfo = treeData.canvases[currentCanvasId];
+    if (currentCanvasInfo && currentCanvasInfo.children.length > 0) {
+        const separator = document.createElement('span');
+        separator.className = 'breadcrumb-separator';
+        breadcrumb.appendChild(separator);
+        
+        const childrenIndicator = document.createElement('span');
+        childrenIndicator.className = 'breadcrumb-item';
+        childrenIndicator.style.opacity = '0.6';
+        childrenIndicator.style.fontSize = '0.8em';
+        childrenIndicator.textContent = `${currentCanvasInfo.children.length} child${currentCanvasInfo.children.length !== 1 ? 'ren' : ''}`;
+        childrenIndicator.title = 'This canvas has child canvases';
+        breadcrumb.appendChild(childrenIndicator);
+    }
 }
 
 function getCanvasPath(canvasId) {
@@ -322,3 +369,4 @@ async function deleteCanvas(canvasId) {
 // Export functions for use by other modules
 window.switchToCanvas = switchToCanvas;
 window.getCurrentCanvasId = () => currentCanvasId;
+window.loadTreeData = loadTreeData;
