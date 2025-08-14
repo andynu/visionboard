@@ -32,7 +32,19 @@ app.get('/api/canvas/:id', async (req, res) => {
   try {
     const canvasPath = path.join(CANVASES_DIR, `${req.params.id}.json`);
     const data = await fs.readFile(canvasPath, 'utf8');
-    res.json(JSON.parse(data));
+    let canvas = JSON.parse(data);
+    
+    // Migration: Add version if missing
+    if (!canvas.version) {
+      canvas.version = '1.0.0';
+      canvas.modified = new Date().toISOString();
+      
+      // Save the migrated canvas
+      await fs.writeFile(canvasPath, JSON.stringify(canvas, null, 2));
+      console.log(`Migrated canvas ${canvas.id} to version 1.0.0`);
+    }
+    
+    res.json(canvas);
   } catch (error) {
     if (error.code === 'ENOENT') {
       res.status(404).json({ error: 'Canvas not found' });
@@ -45,6 +57,7 @@ app.get('/api/canvas/:id', async (req, res) => {
 app.post('/api/canvas', async (req, res) => {
   try {
     const canvas = {
+      version: '1.0.0',
       id: uuidv4(),
       name: req.body.name || 'New Canvas',
       parentId: req.body.parentId || null,
@@ -68,6 +81,7 @@ app.put('/api/canvas/:id', async (req, res) => {
     const canvasPath = path.join(CANVASES_DIR, `${req.params.id}.json`);
     const canvas = {
       ...req.body,
+      version: req.body.version || '1.0.0', // Ensure version is preserved or set
       modified: new Date().toISOString()
     };
     
@@ -109,6 +123,7 @@ async function startServer() {
     await fs.access(defaultCanvasPath);
   } catch (error) {
     const defaultCanvas = {
+      version: '1.0.0',
       id: 'main',
       name: 'Main Canvas',
       parentId: null,

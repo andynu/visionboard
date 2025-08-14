@@ -155,6 +155,7 @@ vision-board/
 ### Canvas Definition (JSON)
 ```json
 {
+  "version": "1.0.0",
   "id": "canvas-uuid",
   "name": "My Canvas",
   "parentId": null,
@@ -282,7 +283,7 @@ This plan prioritizes getting a working product quickly while maintaining clear 
 
 ## wishlist
 - ✅ browser back button support
-- export entire board to png
+- ✅ export entire board to png
 - export entire board to json /w encoded embedded images
 - load a board from that embedded image json format.
 - delete image

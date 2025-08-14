@@ -23,6 +23,7 @@
                 <button id="new-folder-btn">New Folder</button>
                 <button id="new-canvas-btn">New Canvas</button>
                 <button id="save-btn">Save</button>
+                <button id="export-btn">Export PNG</button>
             </div>
         </header>
         
@@ -54,12 +55,14 @@
     <script src="js/drag-drop.js"></script>
     <script src="js/tree-nav.js"></script>
     <script src="js/touch.js"></script>
+    <script src="js/export.js"></script>
     <script>
         // Initialize the application
         document.addEventListener('DOMContentLoaded', () => {
             initializeCanvas();
             initializeDragDrop();
             initializeTreeNav();
+            initializeExport();
             loadCanvas('main');
         });
     </script>
