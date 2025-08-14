@@ -1,6 +1,7 @@
 let canvas = null;
 let currentCanvas = null;
 let isDragging = false;
+let isResizing = false;
 let selectedElement = null;
 let autoSaveTimeout = null;
 
@@ -55,6 +56,9 @@ function renderCanvas() {
             addImageToCanvas(element);
         }
     });
+    
+    // Hide drop zone if there are images on canvas
+    hideDropZoneIfNeeded();
 }
 
 function addImageToCanvas(imageData) {
@@ -78,16 +82,33 @@ function addImageToCanvas(imageData) {
 function makeElementInteractive(element) {
     element.addClass('canvas-element');
     
+    // Create resize handles group
+    const resizeHandles = createResizeHandles(element);
+    
     // Click to select
     element.click((event) => {
         event.stopPropagation();
         selectElement(element);
     });
     
+    // Show/hide resize handles on hover
+    element.mouseover(() => {
+        resizeHandles.addClass('visible');
+    });
+    
+    element.mouseout(() => {
+        if (!resizeHandles.hasClass('dragging')) {
+            resizeHandles.removeClass('visible');
+        }
+    });
+    
     // Make draggable (fixed implementation for SVG.js 2.7.1)
     let dragData = { offsetX: 0, offsetY: 0 };
     
     element.mousedown((event) => {
+        // Don't start dragging if we're clicking on a resize handle
+        if (isResizing) return;
+        
         event.preventDefault();
         event.stopPropagation();
         isDragging = true;
@@ -115,6 +136,9 @@ function makeElementInteractive(element) {
                     currentSvgPt.x - dragData.offsetX,
                     currentSvgPt.y - dragData.offsetY
                 );
+                
+                // Update resize handles position
+                updateResizeHandles(element, resizeHandles);
             }
         };
         
@@ -127,11 +151,6 @@ function makeElementInteractive(element) {
         
         document.addEventListener('mousemove', mousemove);
         document.addEventListener('mouseup', mouseup);
-    });
-    
-    // Double-click to show resize handles (simplified)
-    element.dblclick(() => {
-        showResizeHandles(element);
     });
 }
 
@@ -302,6 +321,12 @@ function deleteSelectedElement() {
     
     const elementData = selectedElement.data('elementData');
     if (elementData) {
+        // Remove resize handles first
+        const resizeHandles = selectedElement.resizeHandles;
+        if (resizeHandles) {
+            resizeHandles.remove();
+        }
+        
         // Remove from canvas data
         currentCanvas.elements = currentCanvas.elements.filter(el => el.id !== elementData.id);
         
@@ -309,6 +334,9 @@ function deleteSelectedElement() {
         selectedElement.remove();
         selectedElement = null;
         hideResizeHandles();
+        
+        // Show drop zone if canvas is now empty
+        showDropZoneIfNeeded();
         
         // Trigger auto-save
         scheduleAutoSave();
@@ -325,4 +353,159 @@ function scheduleAutoSave() {
     autoSaveTimeout = setTimeout(() => {
         saveCanvas();
     }, 2000);
+}
+
+// Resize handles functionality
+function createResizeHandles(element) {
+    const group = canvas.group().addClass('resize-handles');
+    
+    // Create 4 corner handles (larger for easier interaction)
+    const handleSize = 10;
+    const handles = {
+        nw: group.circle(handleSize).addClass('resize-handle nw-resize').attr('style', 'cursor: nw-resize'),
+        ne: group.circle(handleSize).addClass('resize-handle ne-resize').attr('style', 'cursor: ne-resize'),
+        sw: group.circle(handleSize).addClass('resize-handle sw-resize').attr('style', 'cursor: sw-resize'),
+        se: group.circle(handleSize).addClass('resize-handle se-resize').attr('style', 'cursor: se-resize')
+    };
+    
+    // Position handles initially
+    updateResizeHandles(element, group);
+    
+    // Add resize functionality to each handle
+    setupResizeHandle(handles.nw, element, 'nw');
+    setupResizeHandle(handles.ne, element, 'ne');
+    setupResizeHandle(handles.sw, element, 'sw');
+    setupResizeHandle(handles.se, element, 'se');
+    
+    // Store handles reference without using SVG.js data (to avoid circular reference)
+    element.resizeHandles = group;
+    
+    return group;
+}
+
+function updateResizeHandles(element, handles) {
+    if (!handles) return;
+    
+    const x = element.x();
+    const y = element.y();
+    const width = element.width();
+    const height = element.height();
+    const handleSize = 5; // Half of handle size for centering
+    
+    // Position each handle at the corners
+    const children = handles.children();
+    if (children.length >= 4) {
+        children[0].center(x - handleSize, y - handleSize); // nw
+        children[1].center(x + width + handleSize, y - handleSize); // ne
+        children[2].center(x - handleSize, y + height + handleSize); // sw
+        children[3].center(x + width + handleSize, y + height + handleSize); // se
+    }
+}
+
+function setupResizeHandle(handle, element, corner) {
+    let startData = {};
+    
+    handle.mousedown((event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        isResizing = true; // Use global variable
+        
+        const handles = element.resizeHandles;
+        handles.addClass('dragging');
+        
+        // Get SVG point for accurate coordinate conversion
+        const svg = canvas.node;
+        const pt = svg.createSVGPoint();
+        pt.x = event.clientX;
+        pt.y = event.clientY;
+        const svgPt = pt.matrixTransform(svg.getScreenCTM().inverse());
+        
+        // Store initial state
+        startData = {
+            mouseX: svgPt.x,
+            mouseY: svgPt.y,
+            elementX: element.x(),
+            elementY: element.y(),
+            elementWidth: element.width(),
+            elementHeight: element.height()
+        };
+        
+        const mousemove = (e) => {
+            if (isResizing) {
+                // Convert mouse position to SVG coordinates
+                pt.x = e.clientX;
+                pt.y = e.clientY;
+                const currentSvgPt = pt.matrixTransform(svg.getScreenCTM().inverse());
+                
+                const deltaX = currentSvgPt.x - startData.mouseX;
+                const deltaY = currentSvgPt.y - startData.mouseY;
+                
+                resizeElement(element, corner, deltaX, deltaY, startData);
+                updateResizeHandles(element, handles);
+            }
+        };
+        
+        const mouseup = () => {
+            isResizing = false;
+            handles.removeClass('dragging');
+            updateElementPosition(element);
+            document.removeEventListener('mousemove', mousemove);
+            document.removeEventListener('mouseup', mouseup);
+        };
+        
+        document.addEventListener('mousemove', mousemove);
+        document.addEventListener('mouseup', mouseup);
+    });
+}
+
+function resizeElement(element, corner, deltaX, deltaY, startData) {
+    let newX = startData.elementX;
+    let newY = startData.elementY;
+    let newWidth = startData.elementWidth;
+    let newHeight = startData.elementHeight;
+    
+    const minSize = 20; // Minimum size for elements
+    
+    switch (corner) {
+        case 'nw':
+            newX = startData.elementX + deltaX;
+            newY = startData.elementY + deltaY;
+            newWidth = startData.elementWidth - deltaX;
+            newHeight = startData.elementHeight - deltaY;
+            break;
+        case 'ne':
+            newY = startData.elementY + deltaY;
+            newWidth = startData.elementWidth + deltaX;
+            newHeight = startData.elementHeight - deltaY;
+            break;
+        case 'sw':
+            newX = startData.elementX + deltaX;
+            newWidth = startData.elementWidth - deltaX;
+            newHeight = startData.elementHeight + deltaY;
+            break;
+        case 'se':
+            newWidth = startData.elementWidth + deltaX;
+            newHeight = startData.elementHeight + deltaY;
+            break;
+    }
+    
+    // Enforce minimum size
+    if (newWidth < minSize) {
+        if (corner.includes('w')) newX = startData.elementX + startData.elementWidth - minSize;
+        newWidth = minSize;
+    }
+    if (newHeight < minSize) {
+        if (corner.includes('n')) newY = startData.elementY + startData.elementHeight - minSize;
+        newHeight = minSize;
+    }
+    
+    // Apply the changes
+    element.move(newX, newY).size(newWidth, newHeight);
+}
+
+function hideResizeHandles() {
+    // Hide all resize handles
+    canvas.select('.resize-handles').forEach(handles => {
+        handles.removeClass('visible dragging');
+    });
 }

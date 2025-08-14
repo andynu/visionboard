@@ -101,13 +101,6 @@ function screenToCanvasCoordinates(screenX, screenY) {
 }
 
 async function handleFiles(files, dropX = null, dropY = null) {
-    const dropZone = document.getElementById('drop-zone');
-    
-    // Hide drop zone when we have images on the canvas
-    if (currentCanvas && currentCanvas.elements.length === 0) {
-        dropZone.style.display = 'none';
-    }
-    
     for (let i = 0; i < files.length; i++) {
         const file = files[i];
         
@@ -124,12 +117,33 @@ async function handleFiles(files, dropX = null, dropY = null) {
             // Add to canvas
             addImageFromFile(fileInfo, x, y);
             
+            // Hide drop zone after adding the first image
+            hideDropZoneIfNeeded();
+            
         } catch (error) {
             console.error(`Error uploading ${file.name}:`, error);
             // Show more specific error message
             const errorMsg = error.message || 'Upload failed';
             console.log(`Upload error for ${file.name}: ${errorMsg}`);
         }
+    }
+}
+
+function hideDropZoneIfNeeded() {
+    const dropZone = document.getElementById('drop-zone');
+    
+    // Hide drop zone when we have images on the canvas
+    if (currentCanvas && currentCanvas.elements.length > 0) {
+        dropZone.style.display = 'none';
+    }
+}
+
+function showDropZoneIfNeeded() {
+    const dropZone = document.getElementById('drop-zone');
+    
+    // Show drop zone when canvas is empty
+    if (currentCanvas && currentCanvas.elements.length === 0) {
+        dropZone.style.display = 'flex';
     }
 }
 

@@ -100,7 +100,7 @@ body {
     text-align: center;
     transition: all 0.3s ease;
     pointer-events: none;
-    z-index: 1000;
+    z-index: 1;
 }
 
 .drop-zone.drag-over {
@@ -117,23 +117,44 @@ body {
 }
 
 .canvas-element:hover {
-    filter: brightness(1.1);
+    filter: brightness(1.05);
 }
 
 .canvas-element.selected {
     filter: drop-shadow(0 0 8px #007AFF);
 }
 
+/* Resize handles - hidden by default, shown on image hover */
+.resize-handles {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+
+.resize-handles.visible,
+.resize-handles:hover,
+.resize-handles.dragging {
+    opacity: 1;
+    pointer-events: all;
+}
+
 .resize-handle {
-    cursor: nw-resize;
     fill: #fff;
     stroke: #007AFF;
     stroke-width: 2;
+    cursor: nw-resize;
+    transition: all 0.2s ease;
 }
 
 .resize-handle:hover {
     fill: #007AFF;
+    stroke-width: 3;
 }
+
+.resize-handle.se-resize { cursor: se-resize; }
+.resize-handle.sw-resize { cursor: sw-resize; }
+.resize-handle.ne-resize { cursor: ne-resize; }
+.resize-handle.nw-resize { cursor: nw-resize; }
 
 /* Touch and Mobile Optimizations */
 @media (max-width: 768px) {
