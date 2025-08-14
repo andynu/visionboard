@@ -6,8 +6,14 @@ function initializeExport() {
 
 function setupExportButton() {
     const exportBtn = document.getElementById('export-btn');
+    const exportJsonBtn = document.getElementById('export-json-btn');
+    
     if (exportBtn) {
         exportBtn.addEventListener('click', exportCanvasToPNG);
+    }
+    
+    if (exportJsonBtn) {
+        exportJsonBtn.addEventListener('click', exportCanvasToJSON);
     }
 }
 
@@ -183,6 +189,49 @@ function getCurrentCanvasName() {
     return new Date().toISOString().slice(0, 10);
 }
 
+function exportCanvasToJSON() {
+    try {
+        // Get current canvas data
+        if (!window.currentCanvas) {
+            alert('No canvas data found to export');
+            return;
+        }
+
+        // Create export data with metadata
+        const exportData = {
+            version: "1.0",
+            exportDate: new Date().toISOString(),
+            canvas: {
+                id: window.currentCanvas.id,
+                name: window.currentCanvas.name || 'Untitled Canvas',
+                parentId: window.currentCanvas.parentId || null,
+                elements: window.currentCanvas.elements || [],
+                viewBox: window.currentCanvas.viewBox || "0 0 1920 1080",
+                created: window.currentCanvas.created,
+                modified: window.currentCanvas.modified
+            }
+        };
+
+        // Convert to JSON string with formatting
+        const jsonString = JSON.stringify(exportData, null, 2);
+        
+        // Create blob and download
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.download = `vision-board-${getCurrentCanvasName()}.json`;
+        link.href = URL.createObjectURL(blob);
+        link.click();
+        
+        // Clean up
+        URL.revokeObjectURL(link.href);
+        
+    } catch (error) {
+        console.error('JSON export error:', error);
+        alert('Failed to export canvas as JSON: ' + error.message);
+    }
+}
+
 // Export functions for use by other modules
 window.exportCanvasToPNG = exportCanvasToPNG;
+window.exportCanvasToJSON = exportCanvasToJSON;
 window.initializeExport = initializeExport;

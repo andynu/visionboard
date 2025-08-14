@@ -710,3 +710,10 @@ function hideResizeHandles() {
         handles.removeClass('visible dragging');
     });
 }
+
+// Export currentCanvas globally for use by other modules
+Object.defineProperty(window, 'currentCanvas', {
+    get: function() {
+        return currentCanvas;
+    }
+});
