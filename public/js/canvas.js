@@ -166,6 +166,9 @@ function makeFolderInteractive(element) {
         // Don't start dragging if we're clicking on a resize handle
         if (isResizing) return;
         
+        // Ignore middle mouse button - let it bubble up for panning
+        if (event.button === 1) return;
+        
         event.preventDefault();
         event.stopPropagation();
         isDragging = true;
@@ -232,6 +235,9 @@ function makeElementInteractive(element) {
     element.mousedown((event) => {
         // Don't start dragging if we're clicking on a resize handle
         if (isResizing) return;
+        
+        // Ignore middle mouse button - let it bubble up for panning
+        if (event.button === 1) return;
         
         event.preventDefault();
         event.stopPropagation();
