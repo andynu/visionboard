@@ -194,6 +194,14 @@ class RectangleTool extends DrawingTool {
     onMouseDown(event) {
         if (!this.canvas) return;
         
+        // Don't start drawing if clicking on an existing element or UI
+        if (event.target.closest('.canvas-element') || 
+            event.target.closest('.tool-button') || 
+            event.target.closest('.color-swatch') ||
+            event.target.closest('.resize-handle')) {
+            return;
+        }
+        
         // Get canvas coordinates
         const point = this.screenToCanvas(event.clientX, event.clientY);
         this.startPoint = point;
@@ -437,24 +445,35 @@ class ToolManager {
             }
         });
         
-        // Canvas mouse event delegation
+        // Canvas mouse event delegation with high priority
         document.addEventListener('mousedown', (event) => {
-            if (this.activeTool && event.target.closest('.canvas')) {
+            // Check if we're clicking in the canvas area (not on toolbar, sidebar, etc.)
+            const canvasContainer = event.target.closest('.canvas-container');
+            if (this.activeTool && canvasContainer) {
+                // For drawing tools (not hand tool), prevent default canvas behavior
+                if (this.activeTool.name !== 'hand') {
+                    event.stopPropagation();
+                    event.preventDefault();
+                }
                 this.activeTool.onMouseDown(event);
             }
-        });
+        }, true); // Use capture phase for higher priority
         
         document.addEventListener('mousemove', (event) => {
             if (this.activeTool && this.activeTool.isDrawing) {
+                event.stopPropagation();
+                event.preventDefault();
                 this.activeTool.onMouseMove(event);
             }
-        });
+        }, true);
         
         document.addEventListener('mouseup', (event) => {
             if (this.activeTool && this.activeTool.isDrawing) {
+                event.stopPropagation();
+                event.preventDefault();
                 this.activeTool.onMouseUp(event);
             }
-        });
+        }, true);
     }
     
     /**
