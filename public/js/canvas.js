@@ -21,9 +21,7 @@ function initializeCanvas() {
     // Expose canvas globally for tool manager
     window.canvas = canvas;
     
-    // Expose other functions globally for drawing tools
-    window.addRectangleToCanvas = addRectangleToCanvas;
-    window.autoSaveCanvas = saveCanvas;
+    // Note: Global function exposure moved to end of file after all functions are defined
     
     // Handle canvas clicks to deselect elements
     canvas.click(() => {
@@ -247,6 +245,12 @@ function makeFolderInteractive(element) {
 }
 
 function makeElementInteractive(element) {
+    // Handle both SVG.js v2.7.1 and potential version differences
+    if (!element || typeof element.addClass !== 'function') {
+        console.error('Invalid element passed to makeElementInteractive:', element);
+        return;
+    }
+    
     element.addClass('canvas-element');
     
     // Create resize handles group
@@ -1041,3 +1045,8 @@ Object.defineProperty(window, 'currentCanvas', {
         return currentCanvas;
     }
 });
+
+// Expose functions globally for drawing tools (after all functions are defined)
+window.addRectangleToCanvas = addRectangleToCanvas;
+window.autoSaveCanvas = saveCanvas;
+window.makeElementInteractive = makeElementInteractive;
