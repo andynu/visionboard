@@ -3,7 +3,7 @@
 let isTouch = false;
 let lastTouchTime = 0;
 let touchStartPos = { x: 0, y: 0 };
-let isPanning = false;
+// isPanning is declared in canvas.js - using that global variable
 let isZooming = false;
 let lastDistance = 0;
 

@@ -23,7 +23,7 @@ function initializeCanvas() {
     
     // Expose other functions globally for drawing tools
     window.addRectangleToCanvas = addRectangleToCanvas;
-    window.autoSaveCanvas = autoSaveCanvas;
+    window.autoSaveCanvas = saveCanvas;
     
     // Handle canvas clicks to deselect elements
     canvas.click(() => {
