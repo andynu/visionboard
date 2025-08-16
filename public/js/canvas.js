@@ -21,6 +21,10 @@ function initializeCanvas() {
     // Expose canvas globally for tool manager
     window.canvas = canvas;
     
+    // Expose other functions globally for drawing tools
+    window.addRectangleToCanvas = addRectangleToCanvas;
+    window.autoSaveCanvas = autoSaveCanvas;
+    
     // Handle canvas clicks to deselect elements
     canvas.click(() => {
         if (selectedElement && !isPanning) {
@@ -43,12 +47,14 @@ async function loadCanvas(canvasId) {
                     name: 'Main Canvas',
                     elements: []
                 };
+                window.currentCanvas = currentCanvas;
                 return;
             }
             throw new Error('Failed to load canvas');
         }
         
         currentCanvas = await response.json();
+        window.currentCanvas = currentCanvas;
         renderCanvas();
     } catch (error) {
         console.error('Error loading canvas:', error);
@@ -57,6 +63,7 @@ async function loadCanvas(canvasId) {
             name: 'Main Canvas',
             elements: []
         };
+        window.currentCanvas = currentCanvas;
     }
 }
 
@@ -70,6 +77,8 @@ function renderCanvas() {
             addImageToCanvas(element);
         } else if (element.type === 'folder') {
             addFolderToCanvas(element);
+        } else if (element.type === 'rectangle') {
+            addRectangleToCanvas(element);
         }
     });
     
@@ -137,6 +146,25 @@ function addFolderToCanvas(folderData) {
     makeFolderInteractive(group);
     
     return group;
+}
+
+function addRectangleToCanvas(rectangleData) {
+    // Create rectangle using SVG.js
+    const rect = canvas.rect(rectangleData.width, rectangleData.height)
+        .move(rectangleData.x, rectangleData.y)
+        .fill(rectangleData.fill || 'none')
+        .stroke({
+            color: rectangleData.stroke || '#000000',
+            width: rectangleData.strokeWidth || 2
+        });
+    
+    // Store the element data
+    rect.data('elementData', rectangleData);
+    
+    // Make rectangle interactive
+    makeElementInteractive(rect);
+    
+    return rect;
 }
 
 function makeFolderInteractive(element) {
