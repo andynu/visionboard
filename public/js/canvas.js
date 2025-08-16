@@ -545,10 +545,13 @@ function deleteSelectedElement() {
     
     const elementData = selectedElement.data('elementData');
     if (elementData) {
-        // Remove resize handles first
-        const resizeHandles = selectedElement.resizeHandles;
-        if (resizeHandles) {
-            resizeHandles.remove();
+        // Remove resize handles first using the stored ID
+        const handlesId = selectedElement.attr('data-resize-handles-id');
+        if (handlesId) {
+            const handlesGroup = document.getElementById(handlesId);
+            if (handlesGroup) {
+                handlesGroup.remove();
+            }
         }
         
         // Remove from canvas data
@@ -557,7 +560,6 @@ function deleteSelectedElement() {
         // Remove from canvas
         selectedElement.remove();
         selectedElement = null;
-        hideResizeHandles();
         
         // Show drop zone if canvas is now empty
         showDropZoneIfNeeded();
