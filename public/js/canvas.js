@@ -4,6 +4,9 @@ let isDragging = false;
 let isResizing = false;
 let selectedElement = null;
 let autoSaveTimeout = null;
+let isPanning = false;
+let panStart = { x: 0, y: 0 };
+let viewBoxStart = { x: 0, y: 0, width: 0, height: 0 };
 
 function initializeCanvas() {
     const canvasContainer = document.getElementById('canvas');
@@ -12,10 +15,13 @@ function initializeCanvas() {
     
     // Handle canvas clicks to deselect elements
     canvas.click(() => {
-        if (selectedElement) {
+        if (selectedElement && !isPanning) {
             deselectElement();
         }
     });
+    
+    // Add canvas panning functionality
+    setupCanvasPanning();
 }
 
 async function loadCanvas(canvasId) {
@@ -839,6 +845,102 @@ function showAutosaveNotification(message, type = 'saved') {
     notification.hideTimeout = setTimeout(() => {
         notification.classList.remove('show');
     }, hideDelay);
+}
+
+// Canvas panning functionality
+function setupCanvasPanning() {
+    const canvasContainer = document.getElementById('canvas');
+    
+    function startPanning(event) {
+        isPanning = true;
+        
+        // Get initial mouse position in screen coordinates
+        panStart.x = event.clientX;
+        panStart.y = event.clientY;
+        
+        // Store current viewbox
+        const vbox = canvas.viewbox();
+        viewBoxStart.x = vbox.x;
+        viewBoxStart.y = vbox.y;
+        viewBoxStart.width = vbox.width;
+        viewBoxStart.height = vbox.height;
+        
+        // Change cursor to indicate panning
+        document.body.style.cursor = 'grabbing';
+    }
+    
+    // Canvas container mousedown for left-click panning on empty areas
+    canvasContainer.addEventListener('mousedown', (event) => {
+        // Left mouse button (button 0) panning - only on empty canvas
+        if (event.button === 0 && 
+            (event.target === canvasContainer || event.target === canvas.node) && 
+            !isDragging && !isResizing) {
+            event.preventDefault();
+            startPanning(event);
+        }
+    });
+    
+    // Document-level mousedown for middle-click panning anywhere
+    document.addEventListener('mousedown', (event) => {
+        // Middle mouse button (button 1) panning - works anywhere in the canvas area
+        if (event.button === 1 && canvasContainer.contains(event.target)) {
+            event.preventDefault();
+            startPanning(event);
+        }
+    });
+    
+    // Add hover effect for canvas background
+    canvasContainer.addEventListener('mouseover', (event) => {
+        if ((event.target === canvasContainer || event.target === canvas.node) && 
+            !isDragging && !isResizing && !isPanning) {
+            canvasContainer.style.cursor = 'grab';
+        }
+    });
+    
+    canvasContainer.addEventListener('mouseout', (event) => {
+        if (!isPanning && !isDragging && !isResizing) {
+            canvasContainer.style.cursor = 'default';
+        }
+    });
+    
+    document.addEventListener('mousemove', (event) => {
+        if (isPanning) {
+            event.preventDefault();
+            
+            // Calculate mouse delta in screen coordinates
+            const deltaX = event.clientX - panStart.x;
+            const deltaY = event.clientY - panStart.y;
+            
+            // Convert screen delta to SVG coordinates
+            // Since we're moving the viewbox, we need to scale by the zoom factor
+            const scaleX = viewBoxStart.width / canvasContainer.clientWidth;
+            const scaleY = viewBoxStart.height / canvasContainer.clientHeight;
+            
+            // Move viewbox in opposite direction of mouse movement (pan effect)
+            const newX = viewBoxStart.x - (deltaX * scaleX);
+            const newY = viewBoxStart.y - (deltaY * scaleY);
+            
+            canvas.viewbox(newX, newY, viewBoxStart.width, viewBoxStart.height);
+        }
+    });
+    
+    document.addEventListener('mouseup', () => {
+        if (isPanning) {
+            isPanning = false;
+            // Reset cursor
+            document.body.style.cursor = 'default';
+            canvasContainer.style.cursor = 'default';
+        }
+    });
+    
+    // Handle mouse leave to stop panning
+    document.addEventListener('mouseleave', () => {
+        if (isPanning) {
+            isPanning = false;
+            document.body.style.cursor = 'default';
+            canvasContainer.style.cursor = 'default';
+        }
+    });
 }
 
 // Export currentCanvas globally for use by other modules
