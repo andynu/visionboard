@@ -52,7 +52,7 @@ Each task below represents a single git commit and can be implemented independen
 
 ## 3.2: Basic Shape Tools
 
-### Task 3.2.1: Add drawing tools UI to toolbar
+### Task 3.2.1: Add drawing tools UI to toolbar ✅ COMPLETED
 **Files to modify**: `public/index.html`, `public/css/main.css`
 **Description**: Add tool selection buttons to toolbar
 **Implementation**:

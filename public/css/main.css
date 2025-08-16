@@ -194,6 +194,49 @@ body {
     margin: 0 2px;
 }
 
+/* Drawing Tools Styles */
+.drawing-tools {
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.tool-button {
+    background: transparent;
+    color: #374151;
+    border: none;
+    padding: 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    position: relative;
+}
+
+.tool-button:hover {
+    background: #e5e7eb;
+    transform: scale(1.05);
+}
+
+.tool-button.active {
+    background: #007AFF;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0, 122, 255, 0.3);
+}
+
+.tool-button.active:hover {
+    background: #0056CC;
+    transform: scale(1.05);
+}
+
 /* Color Palette Styles */
 .color-palette {
     display: flex;
