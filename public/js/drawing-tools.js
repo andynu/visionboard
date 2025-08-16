@@ -74,19 +74,20 @@ class DrawingTool {
     screenToCanvas(clientX, clientY) {
         if (!this.canvas) return { x: clientX, y: clientY };
         
-        const canvasElement = this.canvas.node;
-        const rect = canvasElement.getBoundingClientRect();
+        // Get the canvas element (same as existing canvas code)
+        const canvasContainer = document.getElementById('canvas');
+        if (!canvasContainer) return { x: clientX, y: clientY };
+        
+        const rect = canvasContainer.getBoundingClientRect();
         const viewBox = this.canvas.viewbox();
         
-        // Calculate scale factors
-        const scaleX = viewBox.width / rect.width;
-        const scaleY = viewBox.height / rect.height;
+        // Convert mouse position to SVG coordinates (same logic as zoom function)
+        const mouseX = clientX - rect.left;
+        const mouseY = clientY - rect.top;
+        const svgX = viewBox.x + (mouseX / canvasContainer.clientWidth) * viewBox.width;
+        const svgY = viewBox.y + (mouseY / canvasContainer.clientHeight) * viewBox.height;
         
-        // Convert to canvas coordinates
-        const x = (clientX - rect.left) * scaleX + viewBox.x;
-        const y = (clientY - rect.top) * scaleY + viewBox.y;
-        
-        return { x, y };
+        return { x: svgX, y: svgY };
     }
     
     /**
@@ -194,11 +195,12 @@ class RectangleTool extends DrawingTool {
     onMouseDown(event) {
         if (!this.canvas) return;
         
-        // Don't start drawing if clicking on an existing element or UI
-        if (event.target.closest('.canvas-element') || 
-            event.target.closest('.tool-button') || 
+        // Don't start drawing if clicking on UI elements (but allow drawing over canvas elements)
+        if (event.target.closest('.tool-button') || 
             event.target.closest('.color-swatch') ||
-            event.target.closest('.resize-handle')) {
+            event.target.closest('.resize-handle') ||
+            event.target.closest('.sidebar') ||
+            event.target.closest('.header')) {
             return;
         }
         
@@ -449,7 +451,9 @@ class ToolManager {
         document.addEventListener('mousedown', (event) => {
             // Check if we're clicking in the canvas area (not on toolbar, sidebar, etc.)
             const canvasContainer = event.target.closest('.canvas-container');
-            if (this.activeTool && canvasContainer) {
+            const isOnCanvas = canvasContainer && !event.target.closest('.sidebar') && !event.target.closest('.header');
+            
+            if (this.activeTool && isOnCanvas) {
                 // For drawing tools (not hand tool), prevent default canvas behavior
                 if (this.activeTool.name !== 'hand') {
                     event.stopPropagation();
