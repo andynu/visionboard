@@ -91,7 +91,7 @@ Each task below represents a single git commit and can be implemented independen
 - Add keyboard shortcuts: H=hand, R=rectangle, L=line, F=freehand
 - Include drawing-tools.js script tag in index.html
 
-### Task 3.2.5: Implement RectangleTool drawing
+### Task 3.2.5: Implement RectangleTool drawing ✅ COMPLETED
 **Files to modify**: `public/js/drawing-tools.js`
 **Description**: Click-drag rectangle creation
 **Implementation**:

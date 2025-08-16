@@ -160,6 +160,152 @@ class HandTool extends DrawingTool {
 }
 
 /**
+ * RectangleTool - Click-drag rectangle creation
+ */
+class RectangleTool extends DrawingTool {
+    constructor() {
+        super('rectangle');
+        this.previewRect = null;
+        this.startPoint = null;
+    }
+    
+    /**
+     * Activate rectangle tool
+     */
+    onActivate() {
+        if (this.canvas) {
+            this.canvas.node.style.cursor = 'crosshair';
+        }
+    }
+    
+    /**
+     * Deactivate rectangle tool
+     */
+    onDeactivate() {
+        this.cleanupPreview();
+        if (this.canvas) {
+            this.canvas.node.style.cursor = 'default';
+        }
+    }
+    
+    /**
+     * Handle mouse down - start rectangle drawing
+     */
+    onMouseDown(event) {
+        if (!this.canvas) return;
+        
+        // Get canvas coordinates
+        const point = this.screenToCanvas(event.clientX, event.clientY);
+        this.startPoint = point;
+        this.isDrawing = true;
+        
+        // Create preview rectangle
+        this.previewRect = this.canvas.rect(0, 0)
+            .move(point.x, point.y)
+            .fill('none')
+            .stroke({
+                color: window.colorManager ? window.colorManager.getCurrentColor() : '#000000',
+                width: 2,
+                dasharray: '5,5'
+            })
+            .opacity(0.7);
+    }
+    
+    /**
+     * Handle mouse move - update rectangle preview
+     */
+    onMouseMove(event) {
+        if (!this.isDrawing || !this.previewRect || !this.startPoint) return;
+        
+        const currentPoint = this.screenToCanvas(event.clientX, event.clientY);
+        
+        // Calculate rectangle dimensions
+        const x = Math.min(this.startPoint.x, currentPoint.x);
+        const y = Math.min(this.startPoint.y, currentPoint.y);
+        const width = Math.abs(currentPoint.x - this.startPoint.x);
+        const height = Math.abs(currentPoint.y - this.startPoint.y);
+        
+        // Update preview rectangle
+        this.previewRect.move(x, y).size(width, height);
+    }
+    
+    /**
+     * Handle mouse up - finalize rectangle creation
+     */
+    onMouseUp(event) {
+        if (!this.isDrawing || !this.startPoint) return;
+        
+        const currentPoint = this.screenToCanvas(event.clientX, event.clientY);
+        
+        // Calculate final rectangle dimensions
+        const x = Math.min(this.startPoint.x, currentPoint.x);
+        const y = Math.min(this.startPoint.y, currentPoint.y);
+        const width = Math.abs(currentPoint.x - this.startPoint.x);
+        const height = Math.abs(currentPoint.y - this.startPoint.y);
+        
+        // Only create rectangle if it meets minimum size (20x20px)
+        if (width >= 20 && height >= 20) {
+            this.createRectangle(x, y, width, height);
+        }
+        
+        // Clean up
+        this.cleanupPreview();
+        this.isDrawing = false;
+        this.startPoint = null;
+    }
+    
+    /**
+     * Create the final rectangle element
+     */
+    createRectangle(x, y, width, height) {
+        const currentColor = window.colorManager ? window.colorManager.getCurrentColor() : '#000000';
+        
+        // Generate unique ID for the rectangle
+        const rectangleId = 'rect-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        
+        // Create rectangle data
+        const rectangleData = {
+            id: rectangleId,
+            type: 'rectangle',
+            x: x,
+            y: y,
+            width: width,
+            height: height,
+            fill: 'none',
+            stroke: currentColor,
+            strokeWidth: 2,
+            created: new Date().toISOString(),
+            modified: new Date().toISOString()
+        };
+        
+        // Add to canvas elements array
+        if (window.currentCanvas) {
+            window.currentCanvas.elements.push(rectangleData);
+            
+            // Add to SVG canvas and make interactive
+            if (window.addRectangleToCanvas) {
+                window.addRectangleToCanvas(rectangleData);
+            }
+            
+            // Auto-save canvas
+            if (window.autoSaveCanvas) {
+                window.autoSaveCanvas();
+            }
+        }
+    }
+    
+    /**
+     * Clean up preview rectangle
+     */
+    cleanupPreview() {
+        if (this.previewRect) {
+            this.previewRect.remove();
+            this.previewRect = null;
+        }
+    }
+}
+
+/**
  * Tool Manager - Manages tool selection and state
  */
 class ToolManager {
@@ -176,8 +322,9 @@ class ToolManager {
      * Initialize all available tools
      */
     initializeTools() {
-        // Initialize hand tool
+        // Initialize tools
         this.tools.set('hand', new HandTool());
+        this.tools.set('rectangle', new RectangleTool());
         
         // Set default tool
         this.setActiveTool('hand');
