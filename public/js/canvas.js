@@ -8,7 +8,7 @@ let autoSaveTimeout = null;
 function initializeCanvas() {
     const canvasContainer = document.getElementById('canvas');
     canvas = SVG(canvasContainer).size('100%', '100%');
-    canvas.viewbox(0, 0, 1920, 1080);
+    canvas.viewbox(-500, -300, 2420, 1380);
     
     // Handle canvas clicks to deselect elements
     canvas.click(() => {
@@ -98,10 +98,12 @@ function addFolderToCanvas(folderData) {
     const iconX = (folderData.width - iconSize) / 2;
     const iconY = folderData.height * 0.2;
     
-    const folderIcon = group.text('📁')
+    // Create SVG folder icon using path
+    const folderIcon = group.path('M4 4h6l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z')
+        .fill('#6b7280')
+        .size(iconSize)
         .move(iconX, iconY)
-        .font({ size: iconSize, anchor: 'middle' })
-        .attr('pointer-events', 'none'); // Prevent text from intercepting clicks
+        .attr('pointer-events', 'none'); // Prevent icon from intercepting clicks
     
     // Create folder label (positioned relative to group origin)
     const labelY = iconY + iconSize + 10;
@@ -144,18 +146,8 @@ function makeFolderInteractive(element) {
         }
     });
     
-    // Add folder-specific styling
-    element.mouseover(() => {
-        resizeHandles.addClass('visible');
-        element.find('rect').first().stroke({ width: 3 });
-    });
-    
-    element.mouseout(() => {
-        if (!resizeHandles.hasClass('dragging')) {
-            resizeHandles.removeClass('visible');
-        }
-        element.find('rect').first().stroke({ width: 2 });
-    });
+    // Show resize handles when folder is selected
+    // (Resize handles will be shown/hidden in selectElement/deselectElement functions)
     
     // Make draggable (same as images)
     let dragData = { offsetX: 0, offsetY: 0 };
@@ -221,16 +213,8 @@ function makeElementInteractive(element) {
         selectElement(element);
     });
     
-    // Show/hide resize handles on hover
-    element.mouseover(() => {
-        resizeHandles.addClass('visible');
-    });
-    
-    element.mouseout(() => {
-        if (!resizeHandles.hasClass('dragging')) {
-            resizeHandles.removeClass('visible');
-        }
-    });
+    // Show resize handles when element is selected
+    // (Resize handles will be shown/hidden in selectElement/deselectElement functions)
     
     // Make draggable (fixed implementation for SVG.js 2.7.1)
     let dragData = { offsetX: 0, offsetY: 0 };
@@ -288,12 +272,42 @@ function selectElement(element) {
     deselectElement();
     selectedElement = element;
     element.addClass('selected');
+    
+    // Show resize handles for selected element
+    const handlesId = element.attr('data-resize-handles-id');
+    if (handlesId) {
+        // Use DOM method instead of SVG.js select which might not work reliably
+        const handlesGroup = document.getElementById(handlesId);
+        if (handlesGroup) {
+            handlesGroup.classList.add('visible');
+        }
+    }
+    
+    // Add selected styling for folders
+    if (element.data('elementData') && element.data('elementData').type === 'folder') {
+        element.find('rect').first().stroke({ width: 3 });
+    }
 }
 
 function deselectElement() {
     if (selectedElement) {
         selectedElement.removeClass('selected');
-        hideResizeHandles();
+        
+        // Hide resize handles for the previously selected element
+        const handlesId = selectedElement.attr('data-resize-handles-id');
+        if (handlesId) {
+            // Use DOM method instead of SVG.js select which might not work reliably
+            const handlesGroup = document.getElementById(handlesId);
+            if (handlesGroup) {
+                handlesGroup.classList.remove('visible');
+            }
+        }
+        
+        // Remove selected styling for folders
+        if (selectedElement.data('elementData') && selectedElement.data('elementData').type === 'folder') {
+            selectedElement.find('rect').first().stroke({ width: 2 });
+        }
+        
         selectedElement = null;
     }
 }
@@ -350,13 +364,9 @@ function updateElementPosition(element) {
         elementData.x = element.x();
         elementData.y = element.y();
         
-        // For folders (groups), preserve original dimensions since groups don't have intrinsic size
         // For images, update dimensions from the actual element
-        if (elementData.type === 'folder') {
-            // Keep original width and height for folders
-            // elementData.width and elementData.height remain unchanged
-        } else {
-            // For images, update dimensions
+        // For folders, width/height are stored in elementData and updated during resize
+        if (elementData.type !== 'folder') {
             elementData.width = element.width();
             elementData.height = element.height();
         }
@@ -389,9 +399,10 @@ async function saveCanvas() {
         }
         
         console.log('Canvas saved successfully');
+        showAutosaveNotification('Saved', 'saved');
     } catch (error) {
         console.error('Error saving canvas:', error);
-        alert('Failed to save canvas');
+        showAutosaveNotification('Save failed', 'error');
     }
 }
 
@@ -562,6 +573,9 @@ function scheduleAutoSave() {
         clearTimeout(autoSaveTimeout);
     }
     
+    // Show saving notification
+    showAutosaveNotification('Saving...', 'saving');
+    
     // Schedule save in 2 seconds
     autoSaveTimeout = setTimeout(() => {
         saveCanvas();
@@ -573,7 +587,7 @@ function createResizeHandles(element) {
     const group = canvas.group().addClass('resize-handles');
     
     // Create 4 corner handles (larger for easier interaction)
-    const handleSize = 10;
+    const handleSize = 16;
     const handles = {
         nw: group.circle(handleSize).addClass('resize-handle nw-resize').attr('style', 'cursor: nw-resize'),
         ne: group.circle(handleSize).addClass('resize-handle ne-resize').attr('style', 'cursor: ne-resize'),
@@ -590,8 +604,22 @@ function createResizeHandles(element) {
     setupResizeHandle(handles.sw, element, 'sw');
     setupResizeHandle(handles.se, element, 'se');
     
-    // Store handles reference without using SVG.js data (to avoid circular reference)
-    element.resizeHandles = group;
+    // Keep handles visible during interaction
+    group.on('mouseover', () => {
+        if (group.hasClass('visible')) {
+            // Only enhance visibility if already visible (selected)
+            group.addClass('highlight');
+        }
+    });
+    
+    group.on('mouseout', () => {
+        group.removeClass('highlight');
+    });
+    
+    // Store handles reference using SVG.js attr method
+    const handlesId = `handles-${Date.now()}-${Math.random()}`;
+    element.attr('data-resize-handles-id', handlesId);
+    group.attr('id', handlesId);
     
     return group;
 }
@@ -599,13 +627,18 @@ function createResizeHandles(element) {
 function updateResizeHandles(element, handles) {
     if (!handles) return;
     
+    const elementData = element.data('elementData');
+    if (!elementData) return;
+    
+    // Use SVG coordinates instead of browser coordinates
     const x = element.x();
     const y = element.y();
-    const width = element.width();
-    const height = element.height();
-    const handleSize = 5; // Half of handle size for centering
+    // Use stored dimensions for folders, actual dimensions for images
+    const width = elementData.type === 'folder' ? elementData.width : element.width();
+    const height = elementData.type === 'folder' ? elementData.height : element.height();
+    const handleSize = 8; // Half of handle size for centering
     
-    // Position each handle at the corners
+    // Position each handle at the corners using SVG coordinates
     const children = handles.children();
     if (children.length >= 4) {
         children[0].center(x - handleSize, y - handleSize); // nw
@@ -623,8 +656,12 @@ function setupResizeHandle(handle, element, corner) {
         event.stopPropagation();
         isResizing = true; // Use global variable
         
-        const handles = element.resizeHandles;
-        handles.addClass('dragging');
+        // Find the handles group by ID
+        const handlesId = element.attr('data-resize-handles-id');
+        const handlesGroup = document.getElementById(handlesId);
+        if (handlesGroup) {
+            handlesGroup.classList.add('dragging');
+        }
         
         // Get SVG point for accurate coordinate conversion
         const svg = canvas.node;
@@ -634,13 +671,17 @@ function setupResizeHandle(handle, element, corner) {
         const svgPt = pt.matrixTransform(svg.getScreenCTM().inverse());
         
         // Store initial state
+        const elementData = element.data('elementData');
+        const width = elementData && elementData.type === 'folder' ? elementData.width : element.width();
+        const height = elementData && elementData.type === 'folder' ? elementData.height : element.height();
+        
         startData = {
             mouseX: svgPt.x,
             mouseY: svgPt.y,
             elementX: element.x(),
             elementY: element.y(),
-            elementWidth: element.width(),
-            elementHeight: element.height()
+            elementWidth: width,
+            elementHeight: height
         };
         
         const mousemove = (e) => {
@@ -654,13 +695,24 @@ function setupResizeHandle(handle, element, corner) {
                 const deltaY = currentSvgPt.y - startData.mouseY;
                 
                 resizeElement(element, corner, deltaX, deltaY, startData);
-                updateResizeHandles(element, handles);
+                // Update resize handles position - get handles group by ID
+                const currentHandlesGroup = document.getElementById(handlesId);
+                if (currentHandlesGroup) {
+                    // Convert DOM element back to SVG.js element for updateResizeHandles
+                    const svgHandlesGroup = canvas.select(`#${handlesId}`).first();
+                    if (svgHandlesGroup) {
+                        updateResizeHandles(element, svgHandlesGroup);
+                    }
+                }
             }
         };
         
         const mouseup = () => {
             isResizing = false;
-            handles.removeClass('dragging');
+            // Remove dragging class from handles group
+            if (handlesGroup) {
+                handlesGroup.classList.remove('dragging');
+            }
             updateElementPosition(element);
             document.removeEventListener('mousemove', mousemove);
             document.removeEventListener('mouseup', mouseup);
@@ -713,7 +765,39 @@ function resizeElement(element, corner, deltaX, deltaY, startData) {
     }
     
     // Apply the changes
-    element.move(newX, newY).size(newWidth, newHeight);
+    element.move(newX, newY);
+    
+    const elementData = element.data('elementData');
+    if (elementData && elementData.type === 'folder') {
+        // For folders, we need to manually resize the components and update stored dimensions
+        elementData.width = newWidth;
+        elementData.height = newHeight;
+        
+        // Update the folder rectangle size
+        const rect = element.find('rect').first();
+        if (rect) {
+            rect.size(newWidth, newHeight);
+        }
+        
+        // Reposition folder icon and label
+        const iconSize = Math.min(newWidth, newHeight) * 0.3;
+        const iconX = (newWidth - iconSize) / 2;
+        const iconY = newHeight * 0.2;
+        
+        const folderIcon = element.find('path').first();
+        if (folderIcon) {
+            folderIcon.size(iconSize).move(iconX, iconY);
+        }
+        
+        const label = element.find('text').first();
+        if (label) {
+            const labelY = iconY + iconSize + 10;
+            label.move(newWidth / 2, labelY);
+        }
+    } else {
+        // For images, use the standard size method
+        element.size(newWidth, newHeight);
+    }
 }
 
 function hideResizeHandles() {
@@ -721,6 +805,38 @@ function hideResizeHandles() {
     canvas.select('.resize-handles').forEach(handles => {
         handles.removeClass('visible dragging');
     });
+}
+
+// Autosave notification system
+function showAutosaveNotification(message, type = 'saved') {
+    const notification = document.getElementById('autosave-notification');
+    if (!notification) return;
+    
+    // Clear any existing timeout
+    if (notification.hideTimeout) {
+        clearTimeout(notification.hideTimeout);
+    }
+    
+    // Set message and type
+    notification.textContent = message;
+    notification.className = 'autosave-notification';
+    
+    if (type === 'saving') {
+        notification.classList.add('saving');
+    } else if (type === 'error') {
+        notification.style.background = '#f44336';
+    } else {
+        notification.style.background = '#4CAF50';
+    }
+    
+    // Show notification
+    notification.classList.add('show');
+    
+    // Hide after delay (longer for saving, shorter for saved/error)
+    const hideDelay = type === 'saving' ? 3000 : 1500;
+    notification.hideTimeout = setTimeout(() => {
+        notification.classList.remove('show');
+    }, hideDelay);
 }
 
 // Export currentCanvas globally for use by other modules
