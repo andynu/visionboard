@@ -7,6 +7,10 @@ let autoSaveTimeout = null;
 let isPanning = false;
 let panStart = { x: 0, y: 0 };
 let viewBoxStart = { x: 0, y: 0, width: 0, height: 0 };
+let zoomLevel = 1.0;
+const minZoom = 0.1;
+const maxZoom = 10.0;
+const zoomSpeed = 0.1;
 
 function initializeCanvas() {
     const canvasContainer = document.getElementById('canvas');
@@ -940,6 +944,46 @@ function setupCanvasPanning() {
             document.body.style.cursor = 'default';
             canvasContainer.style.cursor = 'default';
         }
+    });
+    
+    // Mouse wheel zoom functionality
+    canvasContainer.addEventListener('wheel', (event) => {
+        event.preventDefault();
+        
+        // Get mouse position relative to canvas container
+        const rect = canvasContainer.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+        
+        // Calculate zoom factor
+        const zoomDirection = event.deltaY > 0 ? -1 : 1; // Invert for natural zoom direction
+        const zoomFactor = 1 + (zoomSpeed * zoomDirection);
+        
+        // Calculate new zoom level and clamp it
+        const newZoomLevel = zoomLevel * zoomFactor;
+        if (newZoomLevel < minZoom || newZoomLevel > maxZoom) {
+            return; // Don't zoom if it would exceed limits
+        }
+        
+        zoomLevel = newZoomLevel;
+        
+        // Get current viewbox
+        const vbox = canvas.viewbox();
+        
+        // Convert mouse position to SVG coordinates before zoom
+        const svgMouseX = vbox.x + (mouseX / canvasContainer.clientWidth) * vbox.width;
+        const svgMouseY = vbox.y + (mouseY / canvasContainer.clientHeight) * vbox.height;
+        
+        // Calculate new viewbox dimensions
+        const newWidth = vbox.width / zoomFactor;
+        const newHeight = vbox.height / zoomFactor;
+        
+        // Calculate new viewbox position to keep mouse point fixed
+        const newX = svgMouseX - (mouseX / canvasContainer.clientWidth) * newWidth;
+        const newY = svgMouseY - (mouseY / canvasContainer.clientHeight) * newHeight;
+        
+        // Apply the new viewbox
+        canvas.viewbox(newX, newY, newWidth, newHeight);
     });
 }
 
