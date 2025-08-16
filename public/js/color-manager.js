@@ -10,7 +10,13 @@ class ColorManager {
         this.currentTool = "hand"; // Default tool
         
         this.loadFromStorage();
-        this.initializeUI();
+        
+        // Initialize UI when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.initializeUI());
+        } else {
+            this.initializeUI();
+        }
     }
     
     /**
@@ -97,6 +103,30 @@ class ColorManager {
     initializeUI() {
         this.updateCurrentColorUI();
         this.updatePaletteUI();
+        this.attachEventListeners();
+    }
+    
+    /**
+     * Attach event listeners to UI elements
+     */
+    attachEventListeners() {
+        // Add click handlers to color swatches
+        for (let i = 0; i < this.palette.length; i++) {
+            const swatchElement = document.getElementById(`color-swatch-${i}`);
+            if (swatchElement) {
+                swatchElement.addEventListener('click', () => {
+                    this.setCurrentColor(this.palette[i]);
+                });
+            }
+        }
+        
+        // Add click handler to current color indicator (for future color picker)
+        const currentColorElement = document.getElementById('current-color');
+        if (currentColorElement) {
+            currentColorElement.addEventListener('click', () => {
+                console.log('Current color clicked - color picker will be added in next task');
+            });
+        }
     }
     
     /**
