@@ -117,16 +117,128 @@ class ColorManager {
                 swatchElement.addEventListener('click', () => {
                     this.setCurrentColor(this.palette[i]);
                 });
+                
+                // Add right-click handler for color picker
+                swatchElement.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    this.openColorPicker(i);
+                });
             }
         }
         
-        // Add click handler to current color indicator (for future color picker)
+        // Add click handler to current color indicator
         const currentColorElement = document.getElementById('current-color');
         if (currentColorElement) {
             currentColorElement.addEventListener('click', () => {
-                console.log('Current color clicked - color picker will be added in next task');
+                this.openColorPicker(-1); // -1 indicates changing current color, not palette
             });
         }
+        
+        // Modal event listeners
+        this.attachModalEventListeners();
+    }
+    
+    /**
+     * Attach modal-specific event listeners
+     */
+    attachModalEventListeners() {
+        const modal = document.getElementById('color-picker-modal');
+        const modalClose = document.getElementById('modal-close');
+        const modalCancel = document.getElementById('modal-cancel');
+        const modalOk = document.getElementById('modal-ok');
+        const colorInput = document.getElementById('color-picker-input');
+        const overlay = modal?.querySelector('.modal-overlay');
+        
+        // Close modal handlers
+        [modalClose, modalCancel, overlay].forEach(element => {
+            if (element) {
+                element.addEventListener('click', () => this.closeColorPicker());
+            }
+        });
+        
+        // OK button handler
+        if (modalOk) {
+            modalOk.addEventListener('click', () => this.applyColorChoice());
+        }
+        
+        // Color input change handler
+        if (colorInput) {
+            colorInput.addEventListener('input', (e) => this.updateColorPreview(e.target.value));
+        }
+        
+        // Escape key handler
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal?.classList.contains('show')) {
+                this.closeColorPicker();
+            }
+        });
+    }
+    
+    /**
+     * Open the color picker modal
+     * @param {number} swatchIndex - Index of swatch to modify, or -1 for current color
+     */
+    openColorPicker(swatchIndex) {
+        this.currentPickerTarget = swatchIndex;
+        const modal = document.getElementById('color-picker-modal');
+        const colorInput = document.getElementById('color-picker-input');
+        const currentPreview = document.getElementById('color-preview-current');
+        const newPreview = document.getElementById('color-preview-new');
+        
+        if (!modal || !colorInput) return;
+        
+        // Set initial color
+        const initialColor = swatchIndex >= 0 ? this.palette[swatchIndex] : this.currentColor;
+        colorInput.value = initialColor;
+        
+        // Update preview colors
+        if (currentPreview) currentPreview.style.backgroundColor = initialColor;
+        if (newPreview) newPreview.style.backgroundColor = initialColor;
+        
+        // Show modal
+        modal.classList.add('show');
+    }
+    
+    /**
+     * Close the color picker modal
+     */
+    closeColorPicker() {
+        const modal = document.getElementById('color-picker-modal');
+        if (modal) {
+            modal.classList.remove('show');
+        }
+        this.currentPickerTarget = null;
+    }
+    
+    /**
+     * Update color preview when color input changes
+     * @param {string} color - New color value
+     */
+    updateColorPreview(color) {
+        const newPreview = document.getElementById('color-preview-new');
+        if (newPreview) {
+            newPreview.style.backgroundColor = color;
+        }
+    }
+    
+    /**
+     * Apply the chosen color and close modal
+     */
+    applyColorChoice() {
+        const colorInput = document.getElementById('color-picker-input');
+        if (!colorInput) return;
+        
+        const newColor = colorInput.value;
+        
+        if (this.currentPickerTarget >= 0) {
+            // Update palette color
+            this.setPaletteColor(this.currentPickerTarget, newColor);
+        } else {
+            // Update current color
+            this.setCurrentColor(newColor);
+        }
+        
+        this.closeColorPicker();
     }
     
     /**

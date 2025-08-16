@@ -72,6 +72,28 @@
     <!-- Autosave notification -->
     <div id="autosave-notification" class="autosave-notification"></div>
 
+    <!-- Color Picker Modal -->
+    <div id="color-picker-modal" class="color-picker-modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Choose Color</h3>
+                <button id="modal-close" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="color" id="color-picker-input" class="color-picker-input" value="#000000">
+                <div class="color-preview">
+                    <div class="color-preview-current" id="color-preview-current"></div>
+                    <div class="color-preview-new" id="color-preview-new"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="modal-cancel" class="modal-button modal-cancel">Cancel</button>
+                <button id="modal-ok" class="modal-button modal-ok">OK</button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/color-manager.js"></script>
     <script src="js/canvas.js"></script>
     <script src="js/drag-drop.js"></script>
