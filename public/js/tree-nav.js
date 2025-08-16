@@ -135,9 +135,11 @@ function renderTreeNode(canvasId, level) {
     }
     
     // Icon
-    const icon = document.createElement('span');
-    icon.className = 'tree-icon';
-    icon.textContent = canvasInfo.children.length > 0 ? '📁' : '📄';
+    const icon = document.createElement('i');
+    icon.className = `tree-icon fas ${canvasInfo.children.length > 0 ? 'fa-folder' : 'fa-file'}`;
+    if (canvasId === 'main') {
+        icon.className = 'tree-icon fas fa-home';
+    }
     
     // Label
     const label = document.createElement('span');
@@ -150,7 +152,7 @@ function renderTreeNode(canvasId, level) {
     
     const addButton = document.createElement('button');
     addButton.className = 'tree-action';
-    addButton.textContent = '+';
+    addButton.innerHTML = '<i class="fas fa-plus"></i>';
     addButton.title = 'Add child canvas';
     addButton.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -159,7 +161,7 @@ function renderTreeNode(canvasId, level) {
     
     const deleteButton = document.createElement('button');
     deleteButton.className = 'tree-action';
-    deleteButton.textContent = '×';
+    deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
     deleteButton.title = 'Delete canvas';
     if (canvasId !== 'main') { // Don't allow deleting main canvas
         deleteButton.addEventListener('click', (e) => {
@@ -275,14 +277,14 @@ function updateBreadcrumb() {
         item.className = `breadcrumb-item ${isActive ? 'active' : ''}`;
         
         // Add icon based on position and type
-        const icon = document.createElement('span');
+        const icon = document.createElement('i');
         icon.style.marginRight = '0.25rem';
-        if (index === 0) {
-            icon.textContent = '🏠'; // Home icon for root
+        if (canvasId === 'main') {
+            icon.className = 'fas fa-home'; // Home icon for main canvas
         } else if (canvasInfo.children.length > 0) {
-            icon.textContent = '📁'; // Folder icon for containers
+            icon.className = 'fas fa-folder'; // Folder icon for containers
         } else {
-            icon.textContent = '📄'; // Document icon for leaves
+            icon.className = 'fas fa-file'; // Document icon for leaves
         }
         
         const label = document.createElement('span');
