@@ -11,6 +11,7 @@ let zoomLevel = 1.0;
 const minZoom = 0.1;
 const maxZoom = 10.0;
 const zoomSpeed = 0.1;
+let lastMousePosition = { x: 0, y: 0 };
 
 function initializeCanvas() {
     const canvasContainer = document.getElementById('canvas');
@@ -472,6 +473,7 @@ function generateId() {
     return 'element-' + Math.random().toString(36).substr(2, 9);
 }
 
+
 function showNewFolderDialog() {
     const name = prompt('Enter folder name:', 'New Folder');
     if (name) {
@@ -549,11 +551,20 @@ async function addFolderFromDialog(name) {
 document.getElementById('save-btn').addEventListener('click', saveCanvas);
 document.getElementById('new-folder-btn').addEventListener('click', showNewFolderDialog);
 
+// Track mouse position for paste functionality
+document.addEventListener('mousemove', (event) => {
+    lastMousePosition.x = event.clientX;
+    lastMousePosition.y = event.clientY;
+    // Make it globally accessible for drag-drop.js
+    window.lastMousePosition = lastMousePosition;
+});
+
 // Keyboard shortcuts
 document.addEventListener('keydown', (event) => {
     if (event.key === 'Delete' && selectedElement) {
         deleteSelectedElement();
     }
+    
 });
 
 function deleteSelectedElement() {

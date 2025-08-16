@@ -185,12 +185,44 @@ document.addEventListener('paste', async (event) => {
     if (imageItems.length > 0) {
         event.preventDefault();
         
+        // Calculate cursor position for image placement
+        let svgX = 100; // Default fallback
+        let svgY = 100; // Default fallback
+        
+        // Try to get cursor position and convert to canvas coordinates
+        try {
+            // Get last known mouse position (if available from canvas.js)
+            const lastMousePos = window.lastMousePosition;
+            if (lastMousePos) {
+                const canvasContainer = document.getElementById('canvas');
+                const rect = canvasContainer.getBoundingClientRect();
+                
+                // Get relative mouse position within canvas
+                let mouseX = lastMousePos.x - rect.left;
+                let mouseY = lastMousePos.y - rect.top;
+                
+                // Clamp to canvas bounds
+                mouseX = Math.max(0, Math.min(mouseX, rect.width));
+                mouseY = Math.max(0, Math.min(mouseY, rect.height));
+                
+                // Get canvas and convert to SVG coordinates
+                const canvas = document.querySelector('#canvas svg');
+                if (canvas && window.canvas && window.canvas.viewbox) {
+                    const vbox = window.canvas.viewbox();
+                    svgX = vbox.x + (mouseX / rect.width) * vbox.width;
+                    svgY = vbox.y + (mouseY / rect.height) * vbox.height;
+                }
+            }
+        } catch (error) {
+            console.log('Using default paste position');
+        }
+        
         for (const item of imageItems) {
             const file = item.getAsFile();
             if (file) {
                 try {
                     const fileInfo = await uploadFile(file);
-                    addImageFromFile(fileInfo);
+                    addImageFromFile(fileInfo, svgX, svgY);
                 } catch (error) {
                     console.error('Error uploading pasted image:', error);
                     alert('Failed to upload pasted image');
