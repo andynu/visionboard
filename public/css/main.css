@@ -11,6 +11,34 @@ body {
     overflow: hidden;
 }
 
+/* Autosave notification */
+.autosave-notification {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    background: #4CAF50;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.autosave-notification.saving {
+    background: #FF9800;
+}
+
+.autosave-notification.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 .app-container {
     display: flex;
     flex-direction: column;
@@ -123,26 +151,47 @@ body {
 
 .toolbar {
     display: flex;
-    gap: 0.5rem;
+    align-items: center;
+    gap: 2px;
+    padding: 4px;
+    background: #ffffff;
+    border: 1px solid #e1e5e9;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
 }
 
 .toolbar button {
-    background: #007AFF;
-    color: white;
+    background: transparent;
+    color: #374151;
     border: none;
-    padding: 0.5rem 1rem;
+    padding: 6px;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 0.9rem;
-    transition: background-color 0.2s;
+    font-size: 16px;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    position: relative;
 }
 
 .toolbar button:hover {
-    background: #0056CC;
+    background: #f3f4f6;
+    transform: scale(1.05);
 }
 
 .toolbar button:active {
-    background: #004299;
+    background: #e5e7eb;
+    transform: scale(0.95);
+}
+
+.toolbar-separator {
+    width: 1px;
+    height: 20px;
+    background: #e5e7eb;
+    margin: 0 2px;
 }
 
 .app-body {
@@ -257,11 +306,15 @@ body {
 }
 
 .tree-expand.expanded::before {
-    content: '▼';
+    content: '\f078';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
 }
 
 .tree-expand.collapsed::before {
-    content: '▶';
+    content: '\f054';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
 }
 
 .tree-expand.no-children {
@@ -384,6 +437,7 @@ body {
     opacity: 0;
     transition: opacity 0.2s ease;
     pointer-events: none;
+    z-index: 1000;
 }
 
 .resize-handles.visible,
@@ -398,11 +452,14 @@ body {
     stroke: #007AFF;
     stroke-width: 2;
     cursor: nw-resize;
-    transition: all 0.2s ease;
 }
 
 .resize-handle:hover {
     fill: #007AFF;
+    stroke-width: 3;
+}
+
+.resize-handles.highlight .resize-handle {
     stroke-width: 3;
 }
 
@@ -424,14 +481,16 @@ body {
     }
     
     .toolbar {
-        width: 100%;
         justify-content: center;
+        padding: 6px;
+        gap: 4px;
     }
     
     .toolbar button {
-        padding: 0.75rem 1.25rem;
-        font-size: 1rem;
-        min-height: 44px; /* iOS touch target size */
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+        border-radius: 8px;
     }
     
     .drop-zone {
@@ -455,8 +514,10 @@ body {
 /* Tablet Optimizations */
 @media (min-width: 769px) and (max-width: 1024px) {
     .toolbar button {
-        padding: 0.6rem 1.1rem;
-        min-height: 44px;
+        width: 38px;
+        height: 38px;
+        font-size: 17px;
+        border-radius: 7px;
     }
     
     .resize-handle {
@@ -480,8 +541,10 @@ body {
     }
     
     .toolbar button {
-        min-height: 44px;
-        padding: 0.75rem 1.25rem;
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+        border-radius: 8px;
     }
     
     /* Larger touch targets */
@@ -503,8 +566,10 @@ body {
     }
     
     .toolbar button {
-        padding: 0.5rem 1rem;
-        font-size: 0.9rem;
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+        border-radius: 6px;
     }
 }
 

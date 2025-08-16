@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vision Board</title>
     <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/2.7.1/svg.min.js"></script>
 </head>
 <body>
     <div class="app-container">
         <header class="header">
             <div class="header-left">
-                <button id="sidebar-toggle" class="sidebar-toggle">☰</button>
+                <button id="sidebar-toggle" class="sidebar-toggle"><i class="fas fa-bars"></i></button>
                 <h1>Vision Board</h1>
                 <nav class="breadcrumb" id="breadcrumb">
                     <span class="breadcrumb-item active">Main Canvas</span>
@@ -19,13 +20,15 @@
             </div>
             <div class="toolbar">
                 <input type="file" id="file-input" accept="image/*" multiple style="display: none;">
-                <button id="upload-btn">Add Images</button>
-                <button id="new-folder-btn">New Folder</button>
-                <button id="new-canvas-btn">New Canvas</button>
-                <button id="save-btn">Save</button>
-                <button id="export-png-btn">Export PNG</button>
-                <button id="export-json-btn">Export JSON</button>
-                <button id="import-json-btn">Import JSON</button>
+                <button id="upload-btn" title="Add Images"><i class="fas fa-images"></i></button>
+                <button id="new-folder-btn" title="New Folder"><i class="fas fa-folder-plus"></i></button>
+                <button id="new-canvas-btn" title="New Canvas"><i class="fas fa-plus"></i></button>
+                <div class="toolbar-separator"></div>
+                <button id="save-btn" title="Save"><i class="fas fa-save"></i></button>
+                <div class="toolbar-separator"></div>
+                <button id="export-png-btn" title="Export PNG"><i class="fas fa-image"></i></button>
+                <button id="export-json-btn" title="Export JSON"><i class="fas fa-file-code"></i></button>
+                <button id="import-json-btn" title="Import JSON"><i class="fas fa-file-import"></i></button>
             </div>
         </header>
         
@@ -33,7 +36,7 @@
             <aside class="sidebar" id="sidebar">
                 <div class="sidebar-header">
                     <h3>Canvas Navigator</h3>
-                    <button id="sidebar-close" class="sidebar-close">×</button>
+                    <button id="sidebar-close" class="sidebar-close"><i class="fas fa-times"></i></button>
                 </div>
                 <div class="tree-container">
                     <div id="canvas-tree" class="canvas-tree">
@@ -52,6 +55,9 @@
             </main>
         </div>
     </div>
+
+    <!-- Autosave notification -->
+    <div id="autosave-notification" class="autosave-notification"></div>
 
     <script src="js/canvas.js"></script>
     <script src="js/drag-drop.js"></script>
