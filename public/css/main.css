@@ -194,6 +194,58 @@ body {
     margin: 0 2px;
 }
 
+/* Color Palette Styles */
+.color-palette {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px;
+}
+
+.current-color {
+    width: 48px;
+    height: 32px;
+    border-radius: 6px;
+    border: 2px solid #e5e7eb;
+    background-color: #000000;
+    cursor: pointer;
+    position: relative;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    transition: all 0.15s ease;
+}
+
+.current-color:hover {
+    transform: scale(1.05);
+    border-color: #9ca3af;
+}
+
+.color-swatches {
+    display: flex;
+    gap: 4px;
+}
+
+.color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid #e5e7eb;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+}
+
+.color-swatch:hover {
+    transform: scale(1.1);
+    border-color: #9ca3af;
+}
+
+.color-swatch.selected {
+    border-color: #007AFF;
+    border-width: 3px;
+    transform: scale(1.05);
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+}
+
 .app-body {
     display: flex;
     flex: 1;
