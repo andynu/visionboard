@@ -214,11 +214,76 @@ function resetCanvasView() {
     canvas.viewbox(0, 0, 1920, 1080);
 }
 
+function deselectElement() {
+    if (selectedElement) {
+        // Handle both DOM elements and SVG.js elements
+        if (selectedElement.removeClass) {
+            selectedElement.removeClass('selected');
+        } else {
+            selectedElement.classList.remove('selected');
+        }
+        
+        // Hide resize handles for the previously selected element
+        let handlesId;
+        if (selectedElement.attr) {
+            handlesId = selectedElement.attr('data-resize-handles-id');
+        } else {
+            handlesId = selectedElement.getAttribute('data-resize-handles-id');
+        }
+        
+        if (handlesId) {
+            const handlesGroup = document.getElementById(handlesId);
+            if (handlesGroup) {
+                handlesGroup.classList.remove('visible');
+            }
+        }
+        
+        // Remove selected styling for folders (only for SVG.js elements)
+        if (selectedElement.data && selectedElement.find) {
+            const elementData = selectedElement.data('elementData');
+            if (elementData && elementData.type === 'folder') {
+                selectedElement.find('rect').first().stroke({ width: 2 });
+            }
+        }
+        
+        selectedElement = null;
+    }
+}
+
 // Improved element selection for touch
 function selectElement(element) {
     deselectElement();
     selectedElement = element;
-    element.addClass('selected');
+    
+    // Handle both DOM elements and SVG.js elements
+    if (element.addClass) {
+        element.addClass('selected');
+    } else {
+        element.classList.add('selected');
+    }
+    
+    // Show resize handles for selected element
+    let handlesId;
+    if (element.attr) {
+        handlesId = element.attr('data-resize-handles-id');
+    } else {
+        handlesId = element.getAttribute('data-resize-handles-id');
+    }
+    
+    if (handlesId) {
+        const handlesGroup = document.getElementById(handlesId);
+        if (handlesGroup) {
+            handlesGroup.classList.add('visible');
+        }
+    }
+    
+    // Add selected styling for folders (only for SVG.js elements)
+    if (element.data && element.find) {
+        const elementData = element.data('elementData');
+        if (elementData && elementData.type === 'folder') {
+            element.find('rect').first().stroke({ width: 3 });
+        }
+    }
     
     // Provide haptic feedback on supported devices
     if (navigator.vibrate) {
