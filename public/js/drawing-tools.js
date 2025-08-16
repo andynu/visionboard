@@ -107,6 +107,59 @@ class DrawingTool {
 }
 
 /**
+ * HandTool - Selection and interaction tool that maintains existing behavior
+ */
+class HandTool extends DrawingTool {
+    constructor() {
+        super('hand');
+    }
+    
+    /**
+     * Activate hand tool - enable normal selection/interaction
+     */
+    onActivate() {
+        // Hand tool uses the existing canvas interaction system
+        // No special behavior needed on activation
+        if (this.canvas) {
+            this.canvas.node.style.cursor = 'grab';
+        }
+    }
+    
+    /**
+     * Deactivate hand tool
+     */
+    onDeactivate() {
+        // Reset cursor when deactivating
+        if (this.canvas) {
+            this.canvas.node.style.cursor = 'default';
+        }
+    }
+    
+    /**
+     * Handle mouse down for hand tool
+     * The existing canvas.js selection/drag system handles this
+     */
+    onMouseDown(event) {
+        // Let the existing canvas interaction system handle selection and dragging
+        // This method is implemented to satisfy the base class interface
+    }
+    
+    /**
+     * Handle mouse move for hand tool
+     */
+    onMouseMove(event) {
+        // Existing drag/pan system handles this
+    }
+    
+    /**
+     * Handle mouse up for hand tool
+     */
+    onMouseUp(event) {
+        // Existing system handles this
+    }
+}
+
+/**
  * Tool Manager - Manages tool selection and state
  */
 class ToolManager {
@@ -123,8 +176,8 @@ class ToolManager {
      * Initialize all available tools
      */
     initializeTools() {
-        // Initialize tools (hand tool will be added in next task)
-        this.tools.set('hand', new DrawingTool('hand'));
+        // Initialize hand tool
+        this.tools.set('hand', new HandTool());
         
         // Set default tool
         this.setActiveTool('hand');

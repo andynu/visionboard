@@ -18,6 +18,9 @@ function initializeCanvas() {
     canvas = SVG(canvasContainer).size('100%', '100%');
     canvas.viewbox(-500, -300, 2420, 1380);
     
+    // Expose canvas globally for tool manager
+    window.canvas = canvas;
+    
     // Handle canvas clicks to deselect elements
     canvas.click(() => {
         if (selectedElement && !isPanning) {
