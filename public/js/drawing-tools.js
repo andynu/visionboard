@@ -74,20 +74,15 @@ class DrawingTool {
     screenToCanvas(clientX, clientY) {
         if (!this.canvas) return { x: clientX, y: clientY };
         
-        // Get the canvas element (same as existing canvas code)
-        const canvasContainer = document.getElementById('canvas');
-        if (!canvasContainer) return { x: clientX, y: clientY };
+        // Use the exact same coordinate conversion as the working drag functionality
+        // This uses SVG's native coordinate transformation which handles all transformations
+        const svg = this.canvas.node;
+        const pt = svg.createSVGPoint();
+        pt.x = clientX;
+        pt.y = clientY;
+        const svgPt = pt.matrixTransform(svg.getScreenCTM().inverse());
         
-        const rect = canvasContainer.getBoundingClientRect();
-        const viewBox = this.canvas.viewbox();
-        
-        // Convert mouse position to SVG coordinates (same logic as zoom function)
-        const mouseX = clientX - rect.left;
-        const mouseY = clientY - rect.top;
-        const svgX = viewBox.x + (mouseX / canvasContainer.clientWidth) * viewBox.width;
-        const svgY = viewBox.y + (mouseY / canvasContainer.clientHeight) * viewBox.height;
-        
-        return { x: svgX, y: svgY };
+        return { x: svgPt.x, y: svgPt.y };
     }
     
     /**
