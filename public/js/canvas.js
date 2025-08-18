@@ -328,9 +328,11 @@ function selectElement(element) {
     // Show resize handles for selected element
     const handlesId = element.attr('data-resize-handles-id');
     if (handlesId) {
-        // Use DOM method instead of SVG.js select which might not work reliably
+        // Use direct style manipulation with !important to override CSS rules
         const handlesGroup = document.getElementById(handlesId);
         if (handlesGroup) {
+            handlesGroup.style.setProperty('opacity', '1', 'important');
+            handlesGroup.style.setProperty('pointer-events', 'all', 'important');
             handlesGroup.classList.add('visible');
         }
     }
@@ -348,9 +350,11 @@ function deselectElement() {
         // Hide resize handles for the previously selected element
         const handlesId = selectedElement.attr('data-resize-handles-id');
         if (handlesId) {
-            // Use DOM method instead of SVG.js select which might not work reliably
+            // Use direct style manipulation with !important to override CSS rules
             const handlesGroup = document.getElementById(handlesId);
             if (handlesGroup) {
+                handlesGroup.style.setProperty('opacity', '0', 'important');
+                handlesGroup.style.setProperty('pointer-events', 'none', 'important');
                 handlesGroup.classList.remove('visible');
             }
         }
@@ -364,35 +368,6 @@ function deselectElement() {
     }
 }
 
-function showResizeHandles(element) {
-    hideResizeHandles();
-    
-    const bbox = element.bbox();
-    const handleSize = 8;
-    
-    // Create resize handles at corners
-    const handles = [
-        { x: bbox.x - handleSize/2, y: bbox.y - handleSize/2 },
-        { x: bbox.x2 - handleSize/2, y: bbox.y - handleSize/2 },
-        { x: bbox.x2 - handleSize/2, y: bbox.y2 - handleSize/2 },
-        { x: bbox.x - handleSize/2, y: bbox.y2 - handleSize/2 }
-    ];
-    
-    handles.forEach((handle, index) => {
-        const rect = canvas.rect(handleSize, handleSize)
-            .move(handle.x, handle.y)
-            .addClass('resize-handle')
-            .fill('#fff')
-            .stroke('#000');
-        
-        rect.draggable();
-        rect.on('dragmove', () => resizeElement(element, index, rect));
-    });
-}
-
-function hideResizeHandles() {
-    canvas.select('.resize-handle').forEach(handle => handle.remove());
-}
 
 function resizeElement(element, handleIndex, handle) {
     // Simplified resize logic - in a full implementation, 
@@ -685,6 +660,12 @@ function createResizeHandles(element) {
     element.attr('data-resize-handles-id', handlesId);
     group.attr('id', handlesId);
     
+    // Ensure handles are hidden by default (not visible until element is selected)
+    // Use direct style manipulation with !important to override CSS hover rules
+    // SVG.js provides the .node property to access the actual DOM element
+    group.node.style.setProperty('opacity', '0', 'important');
+    group.node.style.setProperty('pointer-events', 'none', 'important');
+    
     return group;
 }
 
@@ -864,12 +845,6 @@ function resizeElement(element, corner, deltaX, deltaY, startData) {
     }
 }
 
-function hideResizeHandles() {
-    // Hide all resize handles
-    canvas.select('.resize-handles').forEach(handles => {
-        handles.removeClass('visible dragging');
-    });
-}
 
 // Autosave notification system
 function showAutosaveNotification(message, type = 'saved') {
@@ -1050,3 +1025,12 @@ Object.defineProperty(window, 'currentCanvas', {
 window.addRectangleToCanvas = addRectangleToCanvas;
 window.autoSaveCanvas = saveCanvas;
 window.makeElementInteractive = makeElementInteractive;
+window.selectElement = selectElement;
+window.deselectElement = deselectElement;
+
+// Expose selectedElement for debugging and testing
+Object.defineProperty(window, 'selectedElement', {
+    get: () => selectedElement,
+    set: (value) => { selectedElement = value; },
+    configurable: true
+});
