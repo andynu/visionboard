@@ -687,7 +687,7 @@ body {
 .resize-handles.visible,
 .resize-handles:hover,
 .resize-handles.dragging {
-    opacity: 1;
+    opacity: 1 !important;
     pointer-events: all;
 }
 

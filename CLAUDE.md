@@ -92,3 +92,30 @@ public/                 # Static frontend assets
 - Uses SVG.js v2.7.1 from CDN
 - Touch interactions optimized for iPad/tablet usage
 - File uploads limited to 10MB with image type validation
+
+### SVG.js v2.7.1 API Notes
+
+**Element Property and Attribute Management:**
+- SVG elements don't support arbitrary properties (e.g., `element.customProp = value` fails silently)
+- Use `element.attr('key', value)` and `element.attr('key')` instead of `setAttribute`/`getAttribute`
+- For element associations, use data attributes: `element.attr('data-custom-id', id)`
+
+**Element Selection:**
+- `canvas.select('#id')` can be unreliable for finding elements by ID
+- Use `document.getElementById(id)` for more reliable element retrieval
+- Mix SVG.js and DOM methods when needed: `document.getElementById(id).classList.add('class')`
+
+**Event Handling:**
+- Both `.on('event', handler)` and `.mouseover(handler)` work
+- `.on('event', handler)` is more consistent across different element types
+- Event propagation works normally with `event.stopPropagation()`
+
+**Class Management:**
+- SVG.js: `.addClass('class')` and `.removeClass('class')`
+- DOM: `element.classList.add('class')` and `element.classList.remove('class')`
+- Both approaches work; mixing them can provide better reliability
+
+**Common Patterns:**
+- Store references using data attributes rather than object properties
+- Use DOM methods for class manipulation when SVG.js selection fails
+- Combine SVG.js convenience methods with raw DOM access for complex operations

@@ -5,7 +5,9 @@
       "Bash(npm install:*)",
       "Bash(npm start)",
       "Bash(node:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "WebFetch(domain:127.0.0.1)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

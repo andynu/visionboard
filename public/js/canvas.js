@@ -24,8 +24,16 @@ function initializeCanvas() {
     // Note: Global function exposure moved to end of file after all functions are defined
     
     // Handle canvas clicks to deselect elements
-    canvas.click(() => {
-        if (selectedElement && !isPanning) {
+    canvas.click((event) => {
+        // Only deselect if we clicked on empty canvas space, not on an element
+        const target = event.target;
+        const isCanvasElement = target && (
+            target.classList.contains('canvas-element') ||
+            target.closest('.canvas-element') ||
+            target.classList.contains('resize-handle')
+        );
+        
+        if (selectedElement && !isPanning && !isCanvasElement) {
             deselectElement();
         }
     });
@@ -80,8 +88,104 @@ function renderCanvas() {
         }
     });
     
+    // Re-attach event listeners to all canvas elements after loading
+    setTimeout(() => {
+        reattachEventListeners();
+        // Ensure all resize handles are hidden after rendering
+        hideAllResizeHandles();
+    }, 100);
+    
     // Hide drop zone if there are images on canvas
     hideDropZoneIfNeeded();
+}
+
+function reattachEventListeners() {
+    console.log('Re-attaching event listeners to loaded elements...');
+    
+    // Use more reliable approach: listen at SVG container level and delegate to elements
+    const svgContainer = document.querySelector('#canvas svg');
+    if (svgContainer) {
+        // Remove existing listener if any
+        if (svgContainer._elementClickHandler) {
+            svgContainer.removeEventListener('click', svgContainer._elementClickHandler);
+        }
+        
+        // Create unified click handler for all canvas elements
+        svgContainer._elementClickHandler = (event) => {
+            const target = event.target;
+            
+            // Check if clicked element is a canvas element
+            if (target && target.classList.contains('canvas-element')) {
+                console.log('Canvas element clicked:', target.id);
+                event.stopPropagation();
+                
+                let elementToSelect = null;
+                
+                // If user clicked on an image, check if there's a rectangle at the same location
+                // This handles the case where rectangles are selection outlines behind images
+                if (target.tagName === 'image') {
+                    // Get click coordinates relative to SVG
+                    const svgRect = svgContainer.getBoundingClientRect();
+                    const clickX = event.clientX - svgRect.left;
+                    const clickY = event.clientY - svgRect.top;
+                    
+                    // Look for rectangles under this point
+                    const allElements = svgContainer.querySelectorAll('.canvas-element');
+                    for (let element of allElements) {
+                        if (element.tagName === 'rect' && element !== target) {
+                            const rect = element.getBoundingClientRect();
+                            const rectLeft = rect.left - svgRect.left;
+                            const rectTop = rect.top - svgRect.top;
+                            const rectRight = rectLeft + rect.width;
+                            const rectBottom = rectTop + rect.height;
+                            
+                            // Check if click is within rectangle bounds
+                            if (clickX >= rectLeft && clickX <= rectRight && 
+                                clickY >= rectTop && clickY <= rectBottom) {
+                                console.log('Found rectangle under image click:', element.id);
+                                target = element; // Switch target to the rectangle
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                // Find the SVG.js element using more reliable DOM-based approach
+                if (canvas && canvas.children) {
+                    elementToSelect = canvas.children().find(child => {
+                        return child.node && child.node.id === target.id;
+                    });
+                }
+                
+                // Fallback: try canvas.select if the above didn't work
+                if (!elementToSelect && canvas) {
+                    try {
+                        elementToSelect = canvas.select(`#${target.id}`).first();
+                    } catch (e) {
+                        console.log('canvas.select failed, trying alternative approach');
+                    }
+                }
+                
+                if (elementToSelect && elementToSelect.node) {
+                    console.log('Found SVG.js element, selecting:', target.id);
+                    selectElement(elementToSelect);
+                    
+                    // Debug: verify selection worked
+                    setTimeout(() => {
+                        const selected = document.querySelector('.selected');
+                        console.log('Selection result - element with selected class:', selected?.id);
+                        console.log('selectedElement variable:', selectedElement?.node?.id);
+                    }, 100);
+                } else {
+                    console.log('Could not find SVG.js element for:', target.id);
+                }
+            }
+        };
+        
+        // Add the listener with capture to ensure it gets events first
+        svgContainer.addEventListener('click', svgContainer._elementClickHandler, true);
+        console.log('Added unified click handler to SVG container');
+    }
 }
 
 function addImageToCanvas(imageData) {
@@ -171,8 +275,8 @@ function makeFolderInteractive(element) {
     // Create resize handles group
     const resizeHandles = createResizeHandles(element);
     
-    // Click to select
-    element.click((event) => {
+    // Click to select - try SVG.js .on() method which may work better than .click() in v2.7.1
+    element.on('click', (event) => {
         event.stopPropagation();
         selectElement(element);
     });
@@ -256,11 +360,8 @@ function makeElementInteractive(element) {
     // Create resize handles group
     const resizeHandles = createResizeHandles(element);
     
-    // Click to select
-    element.click((event) => {
-        event.stopPropagation();
-        selectElement(element);
-    });
+    // Note: Click handling is now done via unified SVG container listener in reattachEventListeners()
+    // This avoids SVG.js v2.7.1 event handling issues and provides more reliable selection
     
     // Show resize handles when element is selected
     // (Resize handles will be shown/hidden in selectElement/deselectElement functions)
@@ -321,19 +422,35 @@ function makeElementInteractive(element) {
 }
 
 function selectElement(element) {
+    console.log('selectElement called with:', element);
     deselectElement();
-    selectedElement = element;
-    element.addClass('selected');
     
-    // Show resize handles for selected element
+    // First hide ALL resize handles to prevent multiple visible handles
+    const allHandles = document.querySelectorAll('[id*="handles-"]');
+    allHandles.forEach(handlesGroup => {
+        handlesGroup.style.setProperty('opacity', '0', 'important');
+        handlesGroup.style.setProperty('pointer-events', 'none', 'important');
+        handlesGroup.classList.remove('visible');
+    });
+    
+    selectedElement = element;
+    
+    // Use DOM method for more reliable class management with SVG.js v2.7.1
+    const domElement = element.node;
+    if (domElement) {
+        domElement.classList.add('selected');
+        console.log('Added selected class to element:', domElement.id);
+    }
+    
+    // Show resize handles for selected element only
     const handlesId = element.attr('data-resize-handles-id');
     if (handlesId) {
-        // Use direct style manipulation with !important to override CSS rules
         const handlesGroup = document.getElementById(handlesId);
         if (handlesGroup) {
             handlesGroup.style.setProperty('opacity', '1', 'important');
             handlesGroup.style.setProperty('pointer-events', 'all', 'important');
             handlesGroup.classList.add('visible');
+            console.log('Showing handles for selected element:', handlesId);
         }
     }
     
@@ -345,7 +462,11 @@ function selectElement(element) {
 
 function deselectElement() {
     if (selectedElement) {
-        selectedElement.removeClass('selected');
+        // Use DOM method for more reliable class management with SVG.js v2.7.1
+        const domElement = selectedElement.node;
+        if (domElement) {
+            domElement.classList.remove('selected');
+        }
         
         // Hide resize handles for the previously selected element
         const handlesId = selectedElement.attr('data-resize-handles-id');
@@ -1020,6 +1141,16 @@ Object.defineProperty(window, 'currentCanvas', {
         return currentCanvas;
     }
 });
+
+function hideAllResizeHandles() {
+    // Hide all resize handles using direct style manipulation for reliability
+    const allHandles = document.querySelectorAll('.resize-handles');
+    allHandles.forEach(handle => {
+        handle.style.setProperty('opacity', '0', 'important');
+        handle.style.setProperty('pointer-events', 'none', 'important');
+        handle.classList.remove('visible', 'dragging');
+    });
+}
 
 // Expose functions globally for drawing tools (after all functions are defined)
 window.addRectangleToCanvas = addRectangleToCanvas;
