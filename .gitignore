@@ -7,10 +7,12 @@ test-*.js
 test-*.png
 *-test-*.png
 
-# Runtime storage
+# Runtime storage (exclude all except main.json and committed canvases)
 server/storage/canvases/canvas-*.json
 server/storage/canvases/test-*.json
+server/storage/canvases/[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-*.json
 server/storage/images/
+server/storage/tree.json
 
 # Editor tags
 tags
