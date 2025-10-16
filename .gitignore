@@ -1,0 +1,24 @@
+# Node modules
+node_modules/
+
+# Debug and test scripts
+debug-*.js
+test-*.js
+test-*.png
+*-test-*.png
+
+# Runtime storage
+server/storage/canvases/canvas-*.json
+server/storage/canvases/test-*.json
+server/storage/images/
+
+# Editor tags
+tags
+tags.*
+
+# Screenshots and planning docs
+*.png
+plan*.md
+
+# Local config
+.DS_Store
