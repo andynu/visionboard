@@ -361,16 +361,19 @@ function makeElementInteractive(element) {
     }
     
     element.addClass('canvas-element');
-    
+
     // Create resize handles group
     const resizeHandles = createResizeHandles(element);
-    
-    // Note: Click handling is now done via unified SVG container listener in reattachEventListeners()
-    // This avoids SVG.js v2.7.1 event handling issues and provides more reliable selection
-    
+
+    // Click to select - add direct click handler like folders have
+    element.on('click', (event) => {
+        event.stopPropagation();
+        selectElement(element);
+    });
+
     // Show resize handles when element is selected
     // (Resize handles will be shown/hidden in selectElement/deselectElement functions)
-    
+
     // Make draggable (fixed implementation for SVG.js 2.7.1)
     let dragData = { offsetX: 0, offsetY: 0 };
     
