@@ -103,23 +103,23 @@ function screenToCanvasCoordinates(screenX, screenY) {
 async function handleFiles(files, dropX = null, dropY = null) {
     for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        
+
         try {
             // Show upload progress (simplified)
             console.log(`Uploading ${file.name}...`);
-            
+
             const fileInfo = await uploadFile(file);
-            
+
             // Calculate position for multiple files
             let x = dropX !== null ? dropX : 100 + (i * 50);
             let y = dropY !== null ? dropY : 100 + (i * 50);
-            
-            // Add to canvas
-            addImageFromFile(fileInfo, x, y);
-            
+
+            // Add to canvas (await since it's async now)
+            await addImageFromFile(fileInfo, x, y);
+
             // Hide drop zone after adding the first image
             hideDropZoneIfNeeded();
-            
+
         } catch (error) {
             console.error(`Error uploading ${file.name}:`, error);
             // Show more specific error message

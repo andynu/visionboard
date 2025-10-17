@@ -181,12 +181,15 @@ async function addImageToCanvas(imageData) {
     if (window.isTauriApp && window.isTauriApp()) {
         // Extract filename from path like "/api/images/filename.ext"
         const filename = imageSrc.split('/').pop();
+        console.log('Converting image path for Tauri:', filename);
 
         try {
             // Get the actual filesystem path
             const fsPath = await window.imageAPI.getPath(filename);
+            console.log('Filesystem path:', fsPath);
             // Convert to asset URL that webview can load
             imageSrc = window.__TAURI__.core.convertFileSrc(fsPath);
+            console.log('Converted to asset URL:', imageSrc);
         } catch (error) {
             console.error('Error converting image path:', error);
             // Fallback to original path
