@@ -46,7 +46,7 @@ async function loadCanvas(canvasId) {
     try {
         currentCanvas = await window.canvasAPI.get(canvasId);
         window.currentCanvas = currentCanvas;
-        renderCanvas();
+        await renderCanvas();
     } catch (error) {
         console.error('Error loading canvas:', error);
         currentCanvas = {
@@ -58,20 +58,21 @@ async function loadCanvas(canvasId) {
     }
 }
 
-function renderCanvas() {
+async function renderCanvas() {
     canvas.clear();
-    
+
     if (!currentCanvas || !currentCanvas.elements) return;
-    
-    currentCanvas.elements.forEach(element => {
+
+    // Render elements - handle async image loading
+    for (const element of currentCanvas.elements) {
         if (element.type === 'image') {
-            addImageToCanvas(element);
+            await addImageToCanvas(element);
         } else if (element.type === 'folder') {
             addFolderToCanvas(element);
         } else if (element.type === 'rectangle') {
             addRectangleToCanvas(element);
         }
-    });
+    }
     
     // Re-attach event listeners to all canvas elements after loading
     setTimeout(() => {
@@ -173,21 +174,39 @@ function reattachEventListeners() {
     }
 }
 
-function addImageToCanvas(imageData) {
-    const image = canvas.image(imageData.src)
+async function addImageToCanvas(imageData) {
+    // Convert image path for Tauri if needed
+    let imageSrc = imageData.src;
+
+    if (window.isTauriApp && window.isTauriApp()) {
+        // Extract filename from path like "/api/images/filename.ext"
+        const filename = imageSrc.split('/').pop();
+
+        try {
+            // Get the actual filesystem path
+            const fsPath = await window.imageAPI.getPath(filename);
+            // Convert to asset URL that webview can load
+            imageSrc = window.__TAURI__.core.convertFileSrc(fsPath);
+        } catch (error) {
+            console.error('Error converting image path:', error);
+            // Fallback to original path
+        }
+    }
+
+    const image = canvas.image(imageSrc)
         .move(imageData.x, imageData.y)
         .size(imageData.width, imageData.height);
-    
+
     if (imageData.rotation) {
         image.rotate(imageData.rotation);
     }
-    
+
     // Store the element data
     image.data('elementData', imageData);
-    
+
     // Make image interactive
     makeElementInteractive(image);
-    
+
     return image;
 }
 
@@ -529,7 +548,7 @@ async function saveCanvas() {
 }
 
 // Add image from uploaded file
-function addImageFromFile(fileInfo, x = 100, y = 100) {
+async function addImageFromFile(fileInfo, x = 100, y = 100) {
     const imageData = {
         id: generateId(),
         type: 'image',
@@ -541,19 +560,31 @@ function addImageFromFile(fileInfo, x = 100, y = 100) {
         rotation: 0,
         zIndex: currentCanvas.elements.length + 1
     };
-    
+
     currentCanvas.elements.push(imageData);
-    
+
     // Add immediately with default size
-    const svgElement = addImageToCanvas(imageData);
-    
+    const svgElement = await addImageToCanvas(imageData);
+
+    // Determine the correct image URL for dimension loading
+    let imageUrl = fileInfo.path;
+    if (window.isTauriApp && window.isTauriApp()) {
+        const filename = imageUrl.split('/').pop();
+        try {
+            const fsPath = await window.imageAPI.getPath(filename);
+            imageUrl = window.__TAURI__.core.convertFileSrc(fsPath);
+        } catch (error) {
+            console.error('Error converting image path for dimensions:', error);
+        }
+    }
+
     // Load image to get actual dimensions and update the specific element
     const img = new Image();
     img.onload = function() {
         // Calculate aspect ratio and reasonable size
         const aspectRatio = this.naturalWidth / this.naturalHeight;
         const maxSize = 400;
-        
+
         if (aspectRatio > 1) {
             // Landscape
             imageData.width = Math.min(maxSize, this.naturalWidth);
@@ -563,15 +594,15 @@ function addImageFromFile(fileInfo, x = 100, y = 100) {
             imageData.height = Math.min(maxSize, this.naturalHeight);
             imageData.width = imageData.height * aspectRatio;
         }
-        
+
         // Update the specific SVG element instead of re-rendering everything
         if (svgElement) {
             svgElement.size(imageData.width, imageData.height);
         }
-        
+
         scheduleAutoSave();
     };
-    img.src = fileInfo.path;
+    img.src = imageUrl;
 }
 
 function generateId() {
