@@ -181,35 +181,22 @@ async function addImageToCanvas(imageData) {
     if (window.isTauriApp && window.isTauriApp()) {
         // Extract filename from path like "/api/images/filename.ext"
         const filename = imageSrc.split('/').pop();
-        console.log('Converting image path for Tauri:', filename);
 
         try {
             // Get the actual filesystem path
             const fsPath = await window.imageAPI.getPath(filename);
-            console.log('Filesystem path:', fsPath);
             // Convert to asset URL that webview can load
-            // Use https://asset.localhost protocol for Tauri v2
-            imageSrc = window.__TAURI__.core.convertFileSrc(fsPath, 'https');
-            console.log('Converted to asset URL:', imageSrc);
+            imageSrc = window.__TAURI__.core.convertFileSrc(fsPath);
         } catch (error) {
             console.error('Error converting image path:', error);
             // Fallback to original path
         }
     }
 
-    console.log('Creating SVG image with src:', imageSrc);
     const image = canvas.image(imageSrc)
         .move(imageData.x, imageData.y)
         .size(imageData.width, imageData.height);
 
-    // Add error handler
-    image.on('error', function(e) {
-        console.error('SVG image load error:', e);
-    });
-
-    image.on('load', function() {
-        console.log('SVG image loaded successfully');
-    });
 
     if (imageData.rotation) {
         image.rotate(imageData.rotation);
@@ -563,8 +550,6 @@ async function saveCanvas() {
 
 // Add image from uploaded file
 async function addImageFromFile(fileInfo, x = 100, y = 100) {
-    console.log('addImageFromFile called with:', fileInfo);
-
     const imageData = {
         id: generateId(),
         type: 'image',
@@ -580,27 +565,22 @@ async function addImageFromFile(fileInfo, x = 100, y = 100) {
     currentCanvas.elements.push(imageData);
 
     // Add immediately with default size
-    console.log('About to call addImageToCanvas with imageData:', imageData);
     const svgElement = await addImageToCanvas(imageData);
-    console.log('addImageToCanvas returned, svgElement:', svgElement);
 
     // Determine the correct image URL for dimension loading
     let imageUrl = fileInfo.path;
     if (window.isTauriApp && window.isTauriApp()) {
         const filename = imageUrl.split('/').pop();
-        console.log('Converting image URL for dimensions, filename:', filename);
         try {
             const fsPath = await window.imageAPI.getPath(filename);
-            console.log('Got fsPath for dimensions:', fsPath);
-            imageUrl = window.__TAURI__.core.convertFileSrc(fsPath, 'https');
-            console.log('Converted imageUrl for dimensions:', imageUrl);
+            // Don't pass protocol parameter - let Tauri use its default
+            imageUrl = window.__TAURI__.core.convertFileSrc(fsPath);
         } catch (error) {
             console.error('Error converting image path for dimensions:', error);
         }
     }
 
     // Load image to get actual dimensions and update the specific element
-    console.log('Loading image for dimensions from:', imageUrl);
     const img = new Image();
     img.onload = function() {
         // Calculate aspect ratio and reasonable size

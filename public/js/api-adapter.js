@@ -239,7 +239,8 @@
         async getImageUrl(filename) {
             if (isTauri) {
                 const path = await this.getPath(filename);
-                return window.__TAURI__.core.convertFileSrc(path, 'https');
+                // Don't pass protocol parameter - let Tauri use its default
+                return window.__TAURI__.core.convertFileSrc(path);
             } else {
                 return `/api/images/${filename}`;
             }
