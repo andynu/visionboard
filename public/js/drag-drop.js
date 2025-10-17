@@ -212,3 +212,6 @@ document.addEventListener('paste', async (event) => {
         }
     }
 });
+
+// Expose handleFiles globally for Tauri file drop handler
+window.handleFiles = handleFiles;
