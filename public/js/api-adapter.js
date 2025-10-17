@@ -52,7 +52,7 @@
             if (isTauri) {
                 return await window.__TAURI__.core.invoke('update_canvas', {
                     id,
-                    canvas_data: canvasData
+                    canvasData: canvasData
                 });
             } else {
                 const response = await fetch(`/api/canvas/${id}`, {
