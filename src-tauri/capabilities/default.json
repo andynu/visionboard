@@ -11,11 +11,15 @@
     "core:event:default",
     "core:event:allow-listen",
     "core:event:allow-emit",
+    "core:path:default",
+    "core:path:allow-app-data-dir",
     "fs:default",
     "fs:allow-read-file",
     "fs:allow-write-file",
     "fs:allow-read-dir",
     "fs:allow-create",
-    "fs:allow-exists"
+    "fs:allow-exists",
+    "fs:scope-app-data",
+    "fs:scope-app-data-recursive"
   ]
 }
