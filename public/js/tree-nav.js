@@ -67,9 +67,8 @@ function setupBrowserHistory() {
 
 async function loadTreeData() {
     try {
-        const response = await fetch('/api/tree');
-        if (response.ok) {
-            treeData = await response.json();
+        treeData = await window.treeAPI.get();
+        if (treeData) {
             
             // Load the initial canvas (from URL or default to main)
             const urlParams = new URLSearchParams(window.location.search);
@@ -344,33 +343,9 @@ function showNewCanvasDialog(parentId = null) {
 
 async function createNewCanvas(name, parentId = null) {
     try {
-        // Create canvas
-        const canvasResponse = await fetch('/api/canvas', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, parentId })
-        });
-        
-        if (!canvasResponse.ok) {
-            throw new Error('Failed to create canvas');
-        }
-        
-        const canvas = await canvasResponse.json();
-        
-        // Add to tree
-        const treeResponse = await fetch('/api/tree/canvas', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                canvasId: canvas.id, 
-                parentId, 
-                name 
-            })
-        });
-        
-        if (!treeResponse.ok) {
-            throw new Error('Failed to add canvas to tree');
-        }
+        // Create canvas and add to tree
+        const canvas = await window.canvasAPI.create(name, parentId);
+        await window.treeAPI.addCanvas(canvas.id, parentId, name);
         
         // Reload tree and switch to new canvas
         await loadTreeData();
@@ -397,22 +372,10 @@ async function deleteCanvas(canvasId) {
     
     try {
         // Remove from tree first
-        const treeResponse = await fetch(`/api/tree/canvas/${canvasId}`, {
-            method: 'DELETE'
-        });
-        
-        if (!treeResponse.ok) {
-            throw new Error('Failed to remove canvas from tree');
-        }
-        
+        await window.treeAPI.removeCanvas(canvasId);
+
         // Delete canvas file
-        const canvasResponse = await fetch(`/api/canvas/${canvasId}`, {
-            method: 'DELETE'
-        });
-        
-        if (!canvasResponse.ok) {
-            throw new Error('Failed to delete canvas');
-        }
+        await window.canvasAPI.delete(canvasId);
         
         // Reload tree and switch to main if we deleted current canvas
         await loadTreeData();

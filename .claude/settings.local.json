@@ -8,7 +8,8 @@
       "Bash(git add:*)",
       "WebFetch(domain:127.0.0.1)",
       "Bash(grep:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(git stash show --stat)"
     ],
     "deny": [],
     "ask": []

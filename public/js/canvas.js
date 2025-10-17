@@ -44,22 +44,7 @@ function initializeCanvas() {
 
 async function loadCanvas(canvasId) {
     try {
-        const response = await fetch(`/api/canvas/${canvasId}`);
-        if (!response.ok) {
-            if (response.status === 404) {
-                console.log('Canvas not found, creating new one');
-                currentCanvas = {
-                    id: canvasId,
-                    name: 'Main Canvas',
-                    elements: []
-                };
-                window.currentCanvas = currentCanvas;
-                return;
-            }
-            throw new Error('Failed to load canvas');
-        }
-        
-        currentCanvas = await response.json();
+        currentCanvas = await window.canvasAPI.get(canvasId);
         window.currentCanvas = currentCanvas;
         renderCanvas();
     } catch (error) {
@@ -534,18 +519,7 @@ async function saveCanvas() {
     if (!currentCanvas) return;
     
     try {
-        const response = await fetch(`/api/canvas/${currentCanvas.id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(currentCanvas)
-        });
-        
-        if (!response.ok) {
-            throw new Error('Failed to save canvas');
-        }
-        
+        await window.canvasAPI.update(currentCanvas.id, currentCanvas);
         console.log('Canvas saved successfully');
         showAutosaveNotification('Saved', 'saved');
     } catch (error) {
@@ -615,31 +589,11 @@ function showNewFolderDialog() {
 async function addFolderFromDialog(name) {
     try {
         // First create a new canvas for this folder
-        const response = await fetch('/api/canvas', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                name: name,
-                parentId: currentCanvas ? currentCanvas.id : null
-            })
-        });
-        
-        if (!response.ok) {
-            throw new Error('Failed to create canvas for folder');
-        }
-        
-        const childCanvas = await response.json();
-        
+        const parentId = currentCanvas ? currentCanvas.id : null;
+        const childCanvas = await window.canvasAPI.create(name, parentId);
+
         // Add canvas to tree
-        await fetch('/api/tree/canvas', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                canvasId: childCanvas.id, 
-                parentId: currentCanvas ? currentCanvas.id : null,
-                name: name
-            })
-        });
+        await window.treeAPI.addCanvas(childCanvas.id, parentId, name);
         
         // Reload tree data to update navigation
         if (window.loadTreeData) {

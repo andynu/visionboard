@@ -148,27 +148,8 @@ function showDropZoneIfNeeded() {
 }
 
 async function uploadFile(file) {
-    const formData = new FormData();
-    formData.append('image', file);
-    
     try {
-        const response = await fetch('/api/upload', {
-            method: 'POST',
-            body: formData
-        });
-        
-        if (!response.ok) {
-            let errorMsg = 'Upload failed';
-            try {
-                const errorData = await response.json();
-                errorMsg = errorData.error || errorMsg;
-            } catch (e) {
-                errorMsg = `HTTP ${response.status}: ${response.statusText}`;
-            }
-            throw new Error(errorMsg);
-        }
-        
-        return await response.json();
+        return await window.imageAPI.upload(file);
     } catch (error) {
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
             throw new Error('Network error - cannot connect to server');
