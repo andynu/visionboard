@@ -239,7 +239,7 @@
         async getImageUrl(filename) {
             if (isTauri) {
                 const path = await this.getPath(filename);
-                return window.__TAURI__.core.convertFileSrc(path);
+                return window.__TAURI__.core.convertFileSrc(path, 'https');
             } else {
                 return `/api/images/${filename}`;
             }

@@ -188,7 +188,8 @@ async function addImageToCanvas(imageData) {
             const fsPath = await window.imageAPI.getPath(filename);
             console.log('Filesystem path:', fsPath);
             // Convert to asset URL that webview can load
-            imageSrc = window.__TAURI__.core.convertFileSrc(fsPath);
+            // Use https://asset.localhost protocol for Tauri v2
+            imageSrc = window.__TAURI__.core.convertFileSrc(fsPath, 'https');
             console.log('Converted to asset URL:', imageSrc);
         } catch (error) {
             console.error('Error converting image path:', error);
@@ -591,7 +592,7 @@ async function addImageFromFile(fileInfo, x = 100, y = 100) {
         try {
             const fsPath = await window.imageAPI.getPath(filename);
             console.log('Got fsPath for dimensions:', fsPath);
-            imageUrl = window.__TAURI__.core.convertFileSrc(fsPath);
+            imageUrl = window.__TAURI__.core.convertFileSrc(fsPath, 'https');
             console.log('Converted imageUrl for dimensions:', imageUrl);
         } catch (error) {
             console.error('Error converting image path for dimensions:', error);
