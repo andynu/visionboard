@@ -7,7 +7,8 @@
       "Bash(node:*)",
       "Bash(git add:*)",
       "WebFetch(domain:127.0.0.1)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(mv:*)"
     ],
     "deny": [],
     "ask": []
