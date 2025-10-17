@@ -7,8 +7,15 @@
   ],
   "permissions": [
     "core:default",
+    "core:window:default",
     "core:event:default",
+    "core:event:allow-listen",
+    "core:event:allow-emit",
+    "fs:default",
     "fs:allow-read-file",
-    "fs:allow-read-text-file"
+    "fs:allow-write-file",
+    "fs:allow-read-dir",
+    "fs:allow-create",
+    "fs:allow-exists"
   ]
 }
