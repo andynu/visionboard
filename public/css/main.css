@@ -673,7 +673,7 @@ body {
 }
 
 .canvas-element.selected {
-    filter: drop-shadow(0 0 8px #007AFF);
+    /* Selection indicator - stroke will be added via JavaScript for SVG compatibility */
 }
 
 /* Resize handles - hidden by default, shown on image hover */

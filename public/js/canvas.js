@@ -158,9 +158,12 @@ function reattachEventListeners() {
                     
                     // Debug: verify selection worked
                     setTimeout(() => {
-                        const selected = document.querySelector('.selected');
-                        console.log('Selection result - element with selected class:', selected?.id);
-                        console.log('selectedElement variable:', selectedElement?.node?.id);
+                        const imageNode = selectedElement?.node;
+                        console.log('Image element ID:', imageNode?.id);
+                        console.log('Image element classes:', imageNode?.classList.toString());
+                        console.log('Has canvas-element?', imageNode?.classList.contains('canvas-element'));
+                        console.log('Has selected?', imageNode?.classList.contains('selected'));
+                        console.log('Computed filter style:', window.getComputedStyle(imageNode).filter);
                     }, 100);
                 } else {
                     console.log('Could not find SVG.js element for:', target.id);
@@ -446,17 +449,29 @@ function selectElement(element) {
 
     // Use DOM method for more reliable class management with SVG.js v2.7.1
     const domElement = element.node;
-    console.log('domElement:', domElement);
-    console.log('domElement.id:', domElement?.id);
-    console.log('classList before add:', domElement?.classList.toString());
     if (domElement) {
         domElement.classList.add('selected');
-        console.log('Added selected class to element:', domElement.id);
-        console.log('classList after add:', domElement.classList.toString());
-        console.log('Has canvas-element class?', domElement.classList.contains('canvas-element'));
-        console.log('Has selected class?', domElement.classList.contains('selected'));
-    } else {
-        console.error('No DOM element found for:', element);
+
+        // Add visual selection indicator for images using an overlay rectangle
+        // (SVG <image> elements don't support stroke, so we create a rect overlay)
+        if (element.type === 'image') {
+            console.log('Creating selection rectangle for image');
+            const bbox = element.bbox();
+            console.log('Image bbox:', bbox);
+            const selectionRect = canvas.rect(bbox.width, bbox.height)
+                .move(bbox.x, bbox.y)
+                .fill('none')
+                .stroke({ color: '#007AFF', width: 4 })
+                .attr('id', 'selection-indicator-' + element.attr('id'))
+                .attr('pointer-events', 'none'); // Don't interfere with clicks
+
+            console.log('Selection rect created:', selectionRect.node.id);
+            console.log('Selection rect stroke:', selectionRect.attr('stroke'));
+            console.log('Selection rect stroke-width:', selectionRect.attr('stroke-width'));
+
+            // Store reference to remove later
+            element.data('selectionRect', selectionRect);
+        }
     }
     
     // Show resize handles for selected element only
@@ -484,7 +499,16 @@ function deselectElement() {
         if (domElement) {
             domElement.classList.remove('selected');
         }
-        
+
+        // Remove visual selection indicator for images
+        if (selectedElement.type === 'image') {
+            const selectionRect = selectedElement.data('selectionRect');
+            if (selectionRect) {
+                selectionRect.remove();
+                selectedElement.data('selectionRect', null);
+            }
+        }
+
         // Hide resize handles for the previously selected element
         const handlesId = selectedElement.attr('data-resize-handles-id');
         if (handlesId) {
@@ -496,12 +520,12 @@ function deselectElement() {
                 handlesGroup.classList.remove('visible');
             }
         }
-        
+
         // Remove selected styling for folders
         if (selectedElement.data('elementData') && selectedElement.data('elementData').type === 'folder') {
             selectedElement.find('rect').first().stroke({ width: 2 });
         }
-        
+
         selectedElement = null;
     }
 }
