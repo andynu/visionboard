@@ -430,9 +430,10 @@ function makeElementInteractive(element) {
 }
 
 function selectElement(element) {
-    console.log('selectElement called with:', element);
+    console.log('[NEW CODE v2] selectElement called with:', element);
+    console.log('element.node:', element.node);
     deselectElement();
-    
+
     // First hide ALL resize handles to prevent multiple visible handles
     const allHandles = document.querySelectorAll('[id*="handles-"]');
     allHandles.forEach(handlesGroup => {
@@ -440,14 +441,22 @@ function selectElement(element) {
         handlesGroup.style.setProperty('pointer-events', 'none', 'important');
         handlesGroup.classList.remove('visible');
     });
-    
+
     selectedElement = element;
-    
+
     // Use DOM method for more reliable class management with SVG.js v2.7.1
     const domElement = element.node;
+    console.log('domElement:', domElement);
+    console.log('domElement.id:', domElement?.id);
+    console.log('classList before add:', domElement?.classList.toString());
     if (domElement) {
         domElement.classList.add('selected');
         console.log('Added selected class to element:', domElement.id);
+        console.log('classList after add:', domElement.classList.toString());
+        console.log('Has canvas-element class?', domElement.classList.contains('canvas-element'));
+        console.log('Has selected class?', domElement.classList.contains('selected'));
+    } else {
+        console.error('No DOM element found for:', element);
     }
     
     // Show resize handles for selected element only
