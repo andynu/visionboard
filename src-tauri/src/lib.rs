@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 use uuid::Uuid;
+use log::{info, warn, error};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct ViewBox {
@@ -296,26 +297,41 @@ fn init_default_canvas(app: &AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+// Console logging commands to capture frontend logs
+#[tauri::command]
+fn log_info(message: String) {
+    info!("[JS] {}", message);
+}
+
+#[tauri::command]
+fn log_warn(message: String) {
+    warn!("[JS] {}", message);
+}
+
+#[tauri::command]
+fn log_error(message: String) {
+    error!("[JS] {}", message);
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .setup(|app| {
-            if cfg!(debug_assertions) {
-                app.handle().plugin(
-                    tauri_plugin_log::Builder::default()
-                        .level(log::LevelFilter::Info)
-                        .target(tauri_plugin_log::Target::new(
-                            tauri_plugin_log::TargetKind::LogDir { file_name: Some("tauri".to_string()) }
-                        ))
-                        .build(),
-                )?;
+            // Initialize logging plugin (works in both debug and release builds)
+            app.handle().plugin(
+                tauri_plugin_log::Builder::default()
+                    .level(log::LevelFilter::Info)
+                    .target(tauri_plugin_log::Target::new(
+                        tauri_plugin_log::TargetKind::LogDir { file_name: Some("tauri".to_string()) }
+                    ))
+                    .build(),
+            )?;
 
-                // Print log file path to stdout
-                if let Ok(log_dir) = app.path().app_log_dir() {
-                    let log_file = log_dir.join("tauri.log");
-                    println!("Tauri logs writing to: {}", log_file.display());
-                }
+            // Print log file path to stdout
+            if let Ok(log_dir) = app.path().app_log_dir() {
+                let log_file = log_dir.join("tauri.log");
+                println!("Tauri logs writing to: {}", log_file.display());
             }
 
             // Initialize storage directories and default canvas
@@ -332,7 +348,10 @@ pub fn run() {
             get_tree,
             update_tree,
             save_image,
-            get_image_path
+            get_image_path,
+            log_info,
+            log_warn,
+            log_error
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
