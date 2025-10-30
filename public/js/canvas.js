@@ -59,9 +59,12 @@ async function loadCanvas(canvasId) {
 }
 
 async function renderCanvas() {
+    console.log(`[renderCanvas] Starting render, clearing canvas. Data elements count:`, currentCanvas?.elements?.length);
     canvas.clear();
 
     if (!currentCanvas || !currentCanvas.elements) return;
+
+    console.log(`[renderCanvas] Rendering ${currentCanvas.elements.length} elements`);
 
     // Render elements - handle async image loading
     for (const element of currentCanvas.elements) {
@@ -73,14 +76,16 @@ async function renderCanvas() {
             addRectangleToCanvas(element);
         }
     }
-    
+
+    console.log(`[renderCanvas] Finished rendering. SVG children count:`, canvas.children().length);
+
     // Re-attach event listeners to all canvas elements after loading
     setTimeout(() => {
         reattachEventListeners();
         // Ensure all resize handles are hidden after rendering
         hideAllResizeHandles();
     }, 100);
-    
+
     // Hide drop zone if there are images on canvas
     hideDropZoneIfNeeded();
 }
@@ -198,8 +203,8 @@ async function addImageToCanvas(imageData) {
 
     const image = canvas.image(imageSrc)
         .move(imageData.x, imageData.y)
-        .size(imageData.width, imageData.height);
-
+        .size(imageData.width, imageData.height)
+        .attr('id', imageData.id); // Set SVG element ID to match data ID
 
     if (imageData.rotation) {
         image.rotate(imageData.rotation);
@@ -211,12 +216,15 @@ async function addImageToCanvas(imageData) {
     // Make image interactive
     makeElementInteractive(image);
 
+    console.log(`[addImageToCanvas] Added image ${imageData.id}, total elements in canvas:`, canvas.children().length, 'total in data:', currentCanvas.elements.length);
+
     return image;
 }
 
 function addFolderToCanvas(folderData) {
     // Create folder group
-    const group = canvas.group();
+    const group = canvas.group()
+        .attr('id', folderData.id); // Set SVG element ID to match data ID
     
     // Create folder background (positioned relative to group origin)
     const rect = group.rect(folderData.width, folderData.height)
@@ -266,7 +274,8 @@ function addRectangleToCanvas(rectangleData) {
         .stroke({
             color: rectangleData.stroke || '#000000',
             width: rectangleData.strokeWidth || 2
-        });
+        })
+        .attr('id', rectangleData.id); // Set SVG element ID to match data ID
     
     // Store the element data
     rect.data('elementData', rectangleData);
@@ -379,54 +388,57 @@ function makeElementInteractive(element) {
 
     // Make draggable (fixed implementation for SVG.js 2.7.1)
     let dragData = { offsetX: 0, offsetY: 0 };
-    
+
     element.mousedown((event) => {
         // Don't start dragging if we're clicking on a resize handle
         if (isResizing) return;
-        
+
         // Ignore middle mouse button - let it bubble up for panning
         if (event.button === 1) return;
-        
+
         event.preventDefault();
         event.stopPropagation();
         isDragging = true;
-        
+
+        console.log(`[drag start] Element ${element.attr('id')}, SVG children:`, canvas.children().length, 'data elements:', currentCanvas.elements.length);
+
         // Get SVG point for accurate coordinate conversion
         const svg = canvas.node;
         const pt = svg.createSVGPoint();
         pt.x = event.clientX;
         pt.y = event.clientY;
         const svgPt = pt.matrixTransform(svg.getScreenCTM().inverse());
-        
+
         // Calculate offset from mouse to element origin
         dragData.offsetX = svgPt.x - element.x();
         dragData.offsetY = svgPt.y - element.y();
-        
+
         const mousemove = (e) => {
             if (isDragging) {
                 // Convert mouse position to SVG coordinates
                 pt.x = e.clientX;
                 pt.y = e.clientY;
                 const currentSvgPt = pt.matrixTransform(svg.getScreenCTM().inverse());
-                
+
                 // Move element maintaining the original offset
                 element.move(
                     currentSvgPt.x - dragData.offsetX,
                     currentSvgPt.y - dragData.offsetY
                 );
-                
+
                 // Update resize handles position
                 updateResizeHandles(element, resizeHandles);
             }
         };
-        
+
         const mouseup = () => {
             isDragging = false;
+            console.log(`[drag end] Element ${element.attr('id')}, SVG children:`, canvas.children().length, 'data elements:', currentCanvas.elements.length);
             updateElementPosition(element);
             document.removeEventListener('mousemove', mousemove);
             document.removeEventListener('mouseup', mouseup);
         };
-        
+
         document.addEventListener('mousemove', mousemove);
         document.addEventListener('mouseup', mouseup);
     });
@@ -547,25 +559,32 @@ function resizeElement(element, handleIndex, handle) {
 
 function updateElementPosition(element) {
     const elementData = element.data('elementData');
-    
+
     if (elementData) {
+        console.log(`[updateElementPosition] Updating ${elementData.id}, position: (${element.x()}, ${element.y()})`);
+
         // Update position for all elements
         elementData.x = element.x();
         elementData.y = element.y();
-        
+
         // For images, update dimensions from the actual element
         // For folders, width/height are stored in elementData and updated during resize
         if (elementData.type !== 'folder') {
             elementData.width = element.width();
             elementData.height = element.height();
         }
-        
+
         // Update in canvas data
         const index = currentCanvas.elements.findIndex(el => el.id === elementData.id);
         if (index !== -1) {
+            console.log(`[updateElementPosition] Found element at index ${index}, updating in place`);
             currentCanvas.elements[index] = elementData;
+        } else {
+            console.warn(`[updateElementPosition] WARNING: Could not find element ${elementData.id} in currentCanvas.elements!`);
         }
-        
+
+        console.log(`[updateElementPosition] After update, data elements count:`, currentCanvas.elements.length);
+
         // Trigger auto-save
         scheduleAutoSave();
     }
