@@ -9,7 +9,8 @@
       "WebFetch(domain:127.0.0.1)",
       "Bash(grep:*)",
       "Bash(mv:*)",
-      "Bash(git stash show --stat)"
+      "Bash(git stash show --stat)",
+      "Read(//home/andy/.local/share/com.visionboard.app/logs/**)"
     ],
     "deny": [],
     "ask": []

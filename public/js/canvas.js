@@ -1,3 +1,4 @@
+console.log('🎨🎨🎨 CANVAS.JS VERSION 1761790497 LOADING 🎨🎨🎨');
 let canvas = null;
 let currentCanvas = null;
 let isDragging = false;
@@ -82,8 +83,8 @@ async function renderCanvas() {
     // Re-attach event listeners to all canvas elements after loading
     setTimeout(() => {
         reattachEventListeners();
-        // Ensure all resize handles are hidden after rendering
-        hideAllResizeHandles();
+        // NOTE: Removed hideAllResizeHandles() - handles should be controlled by CSS
+        // and selection state, not globally hidden after render
     }, 100);
 
     // Hide drop zone if there are images on canvas
@@ -159,8 +160,18 @@ function reattachEventListeners() {
                 
                 if (elementToSelect && elementToSelect.node) {
                     console.log('Found SVG.js element, selecting:', target.id);
-                    selectElement(elementToSelect);
-                    
+                    console.log('typeof selectElement:', typeof selectElement);
+                    console.log('selectElement function exists?', typeof selectElement === 'function');
+                    try {
+                        console.log('ABOUT TO CALL selectElement...');
+                        selectElement(elementToSelect);
+                        console.log('selectElement call completed');
+                    } catch (error) {
+                        console.error('🚨 selectElement CRASHED:', error);
+                        console.error('Error message:', error.message);
+                        console.error('Error stack:', error.stack);
+                    }
+
                     // Debug: verify selection worked
                     setTimeout(() => {
                         const imageNode = selectedElement?.node;
@@ -445,7 +456,7 @@ function makeElementInteractive(element) {
 }
 
 function selectElement(element) {
-    console.log('[NEW CODE v2] selectElement called with:', element);
+    console.log('🔴🔴🔴 ABSOLUTE NEW CODE LOADED 🔴🔴🔴 selectElement called with:', element);
     console.log('element.node:', element.node);
     deselectElement();
 
@@ -487,15 +498,22 @@ function selectElement(element) {
     }
     
     // Show resize handles for selected element only
-    const handlesId = element.attr('data-resize-handles-id');
-    if (handlesId) {
-        const handlesGroup = document.getElementById(handlesId);
-        if (handlesGroup) {
-            handlesGroup.style.setProperty('opacity', '1', 'important');
-            handlesGroup.style.setProperty('pointer-events', 'all', 'important');
-            handlesGroup.classList.add('visible');
-            console.log('Showing handles for selected element:', handlesId);
-        }
+    const handlesIds = element.attr('data-resize-handles-ids');
+    console.log('[selectElement] Looking for handles with IDs:', handlesIds);
+    if (handlesIds) {
+        const ids = handlesIds.split(',');
+        ids.forEach((id, index) => {
+            const handle = document.getElementById(id);
+            if (handle) {
+                handle.style.setProperty('opacity', '1', 'important');
+                handle.style.setProperty('pointer-events', 'all', 'important');
+                console.log(`[selectElement] Made handle ${index} visible: cx=${handle.getAttribute('cx')}, cy=${handle.getAttribute('cy')}`);
+            } else {
+                console.warn(`[selectElement] Handle not found: ${id}`);
+            }
+        });
+    } else {
+        console.warn('[selectElement] No handles IDs stored on element');
     }
     
     // Add selected styling for folders
@@ -522,15 +540,16 @@ function deselectElement() {
         }
 
         // Hide resize handles for the previously selected element
-        const handlesId = selectedElement.attr('data-resize-handles-id');
-        if (handlesId) {
-            // Use direct style manipulation with !important to override CSS rules
-            const handlesGroup = document.getElementById(handlesId);
-            if (handlesGroup) {
-                handlesGroup.style.setProperty('opacity', '0', 'important');
-                handlesGroup.style.setProperty('pointer-events', 'none', 'important');
-                handlesGroup.classList.remove('visible');
-            }
+        const handlesIds = selectedElement.attr('data-resize-handles-ids');
+        if (handlesIds) {
+            const ids = handlesIds.split(',');
+            ids.forEach(id => {
+                const handle = document.getElementById(id);
+                if (handle) {
+                    handle.style.setProperty('opacity', '0', 'important');
+                    handle.style.setProperty('pointer-events', 'none', 'important');
+                }
+            });
         }
 
         // Remove selected styling for folders
@@ -786,74 +805,100 @@ function scheduleAutoSave() {
 
 // Resize handles functionality
 function createResizeHandles(element) {
-    const group = canvas.group().addClass('resize-handles');
-    
-    // Create 4 corner handles (larger for easier interaction)
-    const handleSize = 16;
+    // EXPERIMENT: Create handles as direct canvas children, NOT in a group
+    // This matches the test circles that DO work
+    const handleRadius = 12;
+
+    // Create circles DIRECTLY on canvas (not in a group)
     const handles = {
-        nw: group.circle(handleSize).addClass('resize-handle nw-resize').attr('style', 'cursor: nw-resize'),
-        ne: group.circle(handleSize).addClass('resize-handle ne-resize').attr('style', 'cursor: ne-resize'),
-        sw: group.circle(handleSize).addClass('resize-handle sw-resize').attr('style', 'cursor: sw-resize'),
-        se: group.circle(handleSize).addClass('resize-handle se-resize').attr('style', 'cursor: se-resize')
+        nw: canvas.circle(handleRadius * 2) // diameter = radius * 2
+            .addClass('resize-handle nw-resize')
+            .fill('#ffffff')
+            .stroke({ color: '#007AFF', width: 3 })
+            .attr('style', 'cursor: nw-resize'),
+        ne: canvas.circle(handleRadius * 2)
+            .addClass('resize-handle ne-resize')
+            .fill('#ffffff')
+            .stroke({ color: '#007AFF', width: 3 })
+            .attr('style', 'cursor: ne-resize'),
+        sw: canvas.circle(handleRadius * 2)
+            .addClass('resize-handle sw-resize')
+            .fill('#ffffff')
+            .stroke({ color: '#007AFF', width: 3 })
+            .attr('style', 'cursor: sw-resize'),
+        se: canvas.circle(handleRadius * 2)
+            .addClass('resize-handle se-resize')
+            .fill('#ffffff')
+            .stroke({ color: '#007AFF', width: 3 })
+            .attr('style', 'cursor: se-resize')
     };
-    
-    // Position handles initially
-    updateResizeHandles(element, group);
-    
+
+    // Store references in an array so we can treat it like a group
+    const handlesArray = [handles.nw, handles.ne, handles.sw, handles.se];
+
+    console.log('[createResizeHandles] Created 4 handle circles directly on canvas');
+    console.log('[createResizeHandles] Handle radius:', handleRadius);
+
+    // Force visibility on each handle
+    Object.keys(handles).forEach(corner => {
+        const handle = handles[corner];
+        handle.node.style.opacity = '1';
+        handle.node.style.pointerEvents = 'all';
+        console.log(`[createResizeHandles] ${corner} handle created:`, handle.attr('id'));
+    });
+
+    // Position handles initially - pass the handles object
+    updateResizeHandles(element, handlesArray);
+
+    // Move ALL handles to front of SVG
+    Object.keys(handles).forEach(corner => {
+        handles[corner].front();
+    });
+
+    console.log('[createResizeHandles] Moved all handles to front of SVG');
+
     // Add resize functionality to each handle
     setupResizeHandle(handles.nw, element, 'nw');
     setupResizeHandle(handles.ne, element, 'ne');
     setupResizeHandle(handles.sw, element, 'sw');
     setupResizeHandle(handles.se, element, 'se');
-    
-    // Keep handles visible during interaction
-    group.on('mouseover', () => {
-        if (group.hasClass('visible')) {
-            // Only enhance visibility if already visible (selected)
-            group.addClass('highlight');
-        }
+
+    // Store handles reference - save array of IDs
+    const handlesIds = handlesArray.map(h => h.attr('id')).join(',');
+    element.attr('data-resize-handles-ids', handlesIds);
+
+    // Hide handles by default (not visible until element is selected)
+    handlesArray.forEach(handle => {
+        handle.node.style.setProperty('opacity', '0', 'important');
+        handle.node.style.setProperty('pointer-events', 'none', 'important');
     });
-    
-    group.on('mouseout', () => {
-        group.removeClass('highlight');
-    });
-    
-    // Store handles reference using SVG.js attr method
-    const handlesId = `handles-${Date.now()}-${Math.random()}`;
-    element.attr('data-resize-handles-id', handlesId);
-    group.attr('id', handlesId);
-    
-    // Ensure handles are hidden by default (not visible until element is selected)
-    // Use direct style manipulation with !important to override CSS hover rules
-    // SVG.js provides the .node property to access the actual DOM element
-    group.node.style.setProperty('opacity', '0', 'important');
-    group.node.style.setProperty('pointer-events', 'none', 'important');
-    
-    return group;
+
+    return handlesArray;
 }
 
 function updateResizeHandles(element, handles) {
-    if (!handles) return;
-    
+    if (!handles || !Array.isArray(handles) || handles.length < 4) return;
+
     const elementData = element.data('elementData');
     if (!elementData) return;
-    
+
     // Use SVG coordinates instead of browser coordinates
     const x = element.x();
     const y = element.y();
     // Use stored dimensions for folders, actual dimensions for images
     const width = elementData.type === 'folder' ? elementData.width : element.width();
     const height = elementData.type === 'folder' ? elementData.height : element.height();
-    const handleSize = 8; // Half of handle size for centering
-    
+    const handleOffset = 12; // Match the handleRadius from createResizeHandles
+
     // Position each handle at the corners using SVG coordinates
-    const children = handles.children();
-    if (children.length >= 4) {
-        children[0].center(x - handleSize, y - handleSize); // nw
-        children[1].center(x + width + handleSize, y - handleSize); // ne
-        children[2].center(x - handleSize, y + height + handleSize); // sw
-        children[3].center(x + width + handleSize, y + height + handleSize); // se
-    }
+    // handles is now an array of SVG.js circle elements
+    handles[0].center(x - handleOffset, y - handleOffset); // nw
+    handles[1].center(x + width + handleOffset, y - handleOffset); // ne
+    handles[2].center(x - handleOffset, y + height + handleOffset); // sw
+    handles[3].center(x + width + handleOffset, y + height + handleOffset); // se
+
+    console.log(`[updateResizeHandles] Positioned ${handles.length} handles for element at (${x}, ${y}) size ${width}x${height}`);
+    console.log(`[updateResizeHandles] NW handle at (${x - handleOffset}, ${y - handleOffset})`);
 }
 
 function setupResizeHandle(handle, element, corner) {

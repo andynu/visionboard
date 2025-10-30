@@ -119,3 +119,4 @@ public/                 # Static frontend assets
 - Store references using data attributes rather than object properties
 - Use DOM methods for class manipulation when SVG.js selection fails
 - Combine SVG.js convenience methods with raw DOM access for complex operations
+- You can see the log for this tauri app here /home/andy/.local/share/com.visionboard.app/logs/tauri.log

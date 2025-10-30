@@ -223,19 +223,23 @@ function deselectElement() {
             selectedElement.classList.remove('selected');
         }
         
-        // Hide resize handles for the previously selected element
-        let handlesId;
+        // Hide resize handles for the previously selected element (updated for new handle system)
+        let handlesIds;
         if (selectedElement.attr) {
-            handlesId = selectedElement.attr('data-resize-handles-id');
+            handlesIds = selectedElement.attr('data-resize-handles-ids');
         } else {
-            handlesId = selectedElement.getAttribute('data-resize-handles-id');
+            handlesIds = selectedElement.getAttribute('data-resize-handles-ids');
         }
-        
-        if (handlesId) {
-            const handlesGroup = document.getElementById(handlesId);
-            if (handlesGroup) {
-                handlesGroup.classList.remove('visible');
-            }
+
+        if (handlesIds) {
+            const ids = handlesIds.split(',');
+            ids.forEach(id => {
+                const handle = document.getElementById(id);
+                if (handle) {
+                    handle.style.setProperty('opacity', '0', 'important');
+                    handle.style.setProperty('pointer-events', 'none', 'important');
+                }
+            });
         }
         
         // Remove selected styling for folders (only for SVG.js elements)
@@ -254,27 +258,37 @@ function deselectElement() {
 function selectElement(element) {
     deselectElement();
     selectedElement = element;
-    
+
     // Handle both DOM elements and SVG.js elements
     if (element.addClass) {
         element.addClass('selected');
     } else {
         element.classList.add('selected');
     }
-    
-    // Show resize handles for selected element
-    let handlesId;
+
+    // Show resize handles for selected element (updated for new handle system)
+    let handlesIds;
     if (element.attr) {
-        handlesId = element.attr('data-resize-handles-id');
+        handlesIds = element.attr('data-resize-handles-ids');
     } else {
-        handlesId = element.getAttribute('data-resize-handles-id');
+        handlesIds = element.getAttribute('data-resize-handles-ids');
     }
-    
-    if (handlesId) {
-        const handlesGroup = document.getElementById(handlesId);
-        if (handlesGroup) {
-            handlesGroup.classList.add('visible');
-        }
+
+    console.log('[touch.js selectElement] Looking for handles with IDs:', handlesIds);
+    if (handlesIds) {
+        const ids = handlesIds.split(',');
+        ids.forEach((id, index) => {
+            const handle = document.getElementById(id);
+            if (handle) {
+                handle.style.setProperty('opacity', '1', 'important');
+                handle.style.setProperty('pointer-events', 'all', 'important');
+                console.log(`[touch.js] Made handle ${index} visible: ${id}`);
+            } else {
+                console.warn(`[touch.js] Handle not found: ${id}`);
+            }
+        });
+    } else {
+        console.warn('[touch.js selectElement] No handles IDs stored on element');
     }
     
     // Add selected styling for folders (only for SVG.js elements)

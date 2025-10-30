@@ -676,7 +676,7 @@ body {
     /* Selection indicator - stroke will be added via JavaScript for SVG compatibility */
 }
 
-/* Resize handles - hidden by default, shown on image hover */
+/* Resize handles - hidden by default, shown on element selection */
 .resize-handles {
     opacity: 0;
     transition: opacity 0.2s ease;
