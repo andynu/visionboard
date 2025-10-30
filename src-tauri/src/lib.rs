@@ -305,8 +305,17 @@ pub fn run() {
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()
                         .level(log::LevelFilter::Info)
+                        .target(tauri_plugin_log::Target::new(
+                            tauri_plugin_log::TargetKind::LogDir { file_name: Some("tauri".to_string()) }
+                        ))
                         .build(),
                 )?;
+
+                // Print log file path to stdout
+                if let Ok(log_dir) = app.path().app_log_dir() {
+                    let log_file = log_dir.join("tauri.log");
+                    println!("Tauri logs writing to: {}", log_file.display());
+                }
             }
 
             // Initialize storage directories and default canvas
