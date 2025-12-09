@@ -547,11 +547,6 @@ function executeAction(action) {
             }
             break;
 
-        // Lock action (placeholder)
-        case 'lock':
-            console.log('Lock - not yet implemented');
-            break;
-
         // Filter actions
         case 'filter-adjust':
             if (contextMenuTarget && window.imageFilters) {
