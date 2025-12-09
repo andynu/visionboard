@@ -265,6 +265,11 @@ function makeFolderInteractive(element, canvas, currentCanvas) {
         document.addEventListener('mousemove', mousemove);
         document.addEventListener('mouseup', mouseup);
     });
+
+    // Attach tooltip handlers
+    if (window.elementTooltip) {
+        window.elementTooltip.attachHandlers(element);
+    }
 }
 
 function makeElementInteractive(element, canvas, currentCanvas) {
@@ -406,6 +411,11 @@ function makeElementInteractive(element, canvas, currentCanvas) {
         document.addEventListener('mousemove', mousemove);
         document.addEventListener('mouseup', mouseup);
     });
+
+    // Attach tooltip handlers
+    if (window.elementTooltip) {
+        window.elementTooltip.attachHandlers(element);
+    }
 }
 
 function selectElement(element, event) {

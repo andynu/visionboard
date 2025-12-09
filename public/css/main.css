@@ -2472,3 +2472,51 @@ body {
     background: rgba(99, 102, 241, 0.2);
     color: #818cf8;
 }
+
+/* Element Tooltip */
+.element-tooltip {
+    position: fixed;
+    z-index: 10001;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.element-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.element-tooltip .tooltip-content {
+    background: rgba(28, 28, 30, 0.95);
+    color: #e5e5e7;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.4;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.element-tooltip .tooltip-dimensions {
+    font-weight: 600;
+    color: #fff;
+    font-size: 13px;
+}
+
+.element-tooltip .tooltip-position {
+    color: #8e8e93;
+    font-size: 11px;
+    margin-top: 2px;
+}
+
+.element-tooltip .tooltip-extra {
+    color: #a5b4fc;
+    font-size: 11px;
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
