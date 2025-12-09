@@ -512,3 +512,4 @@ async function renameCanvas(canvasId, newName) {
 window.switchToCanvas = switchToCanvas;
 window.getCurrentCanvasId = () => currentCanvasId;
 window.loadTreeData = loadTreeData;
+window.renameCanvas = renameCanvas;

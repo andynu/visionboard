@@ -586,7 +586,13 @@ function executeAction(action) {
             break;
 
         case 'folder-rename':
-            console.log('Folder rename - not yet implemented');
+            if (contextMenuTarget && contextMenuTargetData) {
+                const currentName = contextMenuTargetData.name || 'Folder';
+                const newName = prompt('Enter new folder name:', currentName);
+                if (newName && newName.trim() && newName.trim() !== currentName) {
+                    renameFolderElement(contextMenuTarget, contextMenuTargetData, newName.trim());
+                }
+            }
             break;
 
         case 'folder-color':
@@ -722,6 +728,42 @@ function resetCanvasView() {
     if (canvas && window.CONFIG) {
         const vb = window.CONFIG.canvas.initialViewBox;
         canvas.viewbox(vb.x, vb.y, vb.width, vb.height);
+    }
+}
+
+/**
+ * Rename a folder element on the canvas
+ * @param {object} folderElement - SVG.js group element
+ * @param {object} elementData - Element data with name and targetCanvasId
+ * @param {string} newName - New name for the folder
+ */
+async function renameFolderElement(folderElement, elementData, newName) {
+    try {
+        // Record state for undo
+        if (window.undoRedoManager) {
+            window.undoRedoManager.recordState();
+        }
+
+        // Update element data
+        elementData.name = newName;
+        folderElement.data('elementData', elementData);
+
+        // Update the visual text label in the folder group
+        const textElement = folderElement.find('text').first();
+        if (textElement) {
+            textElement.text(newName);
+        }
+
+        // Update tree and canvas data if folder has a target canvas
+        if (elementData.targetCanvasId && window.renameCanvas) {
+            await window.renameCanvas(elementData.targetCanvasId, newName);
+        }
+
+        // Save current canvas
+        window.canvasCore.saveCurrentCanvas();
+    } catch (error) {
+        console.error('Error renaming folder:', error);
+        alert('Failed to rename folder');
     }
 }
 
