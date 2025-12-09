@@ -1,5 +1,9 @@
 # CLAUDE.md
 
+**Note**: This project uses [bd (beads)](https://github.com/steveyegge/beads)
+for issue tracking. Use `bd` commands instead of markdown TODOs.
+See AGENTS.md for workflow details.
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Development Commands
@@ -18,22 +22,66 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Project Structure
 
 ```
-server/app.js           # Main Express server with canvas CRUD API
-server/routes/files.js  # Image upload handling (multer + UUID)
-server/routes/tree.js   # Canvas tree/hierarchy management
-server/storage/         # File-based persistence
-  ├── canvases/         # JSON canvas definitions
-  ├── images/           # Uploaded image files
-  └── tree.json         # Canvas hierarchy structure
+server/
+  app.js                # Main Express server with canvas CRUD API
+  routes/files.js       # Image upload handling (multer + UUID)
+  routes/tree.js        # Canvas tree/hierarchy management
+  storage/              # File-based persistence
+    canvases/           # JSON canvas definitions
+    images/             # Uploaded image files
+    tree.json           # Canvas hierarchy structure
 
-public/                 # Static frontend assets
-  ├── index.html        # Main application page
-  ├── css/main.css      # Application styles
-  └── js/               # Frontend JavaScript modules
-      ├── canvas.js     # SVG.js canvas management & element interactions
-      ├── drag-drop.js  # File upload & drag-and-drop handling
-      ├── tree-nav.js   # Sidebar navigation & canvas switching
-      └── touch.js      # Mobile/tablet touch interactions
+public/
+  index.html            # Main application page
+  css/main.css          # Application styles
+  js/                   # Frontend JavaScript modules (32 files)
+    # Core canvas
+    canvas-core.js      # Canvas init, loading, panning, zooming, autosave
+    canvas-elements.js  # Element creation (images, folders, rectangles)
+    canvas-resize.js    # Resize handle creation and interaction
+    selection.js        # Single/multi-element selection management
+
+    # User interaction
+    drag-drop.js        # File upload & drag-and-drop handling
+    touch.js            # Mobile/tablet touch & gesture support
+    context-menu.js     # Right-click context menus
+    keyboard-shortcuts.js # Canvas keyboard shortcuts
+    keyboard-help.js    # ? key help overlay
+
+    # Element operations
+    transform.js        # Flip, rotation, transforms
+    z-order.js          # Element stacking (bring to front, etc.)
+    grouping.js         # Group/ungroup multiple elements
+    alignment.js        # Align & distribute selected elements
+    clipboard.js        # Copy/paste of canvas elements
+    undo-redo.js        # Undo/redo with state snapshots
+
+    # Visual tools
+    zoom-controls.js    # Zoom to fit, zoom to selection, reset
+    grid-snap.js        # Visual grid & snap-to-grid positioning
+    ruler-guides.js     # Rulers & draggable alignment guides
+    drawing-tools.js    # Rectangle/line drawing tools
+    image-filters.js    # Non-destructive image filters (CSS)
+    color-manager.js    # Color palette & tool selection
+
+    # UI panels
+    tree-nav.js         # Sidebar tree navigation & canvas switching
+    layers-panel.js     # Element list with reordering & visibility
+    element-notes.js    # Attach text notes to elements
+    element-tooltip.js  # Dimension/position tooltips on hover
+    toolbar-scale.js    # HiDPI toolbar scaling (1x/1.5x/2x)
+
+    # Import/export
+    export.js           # Canvas export (PNG/SVG/JSON/clipboard)
+
+    # Tauri integration
+    tauri-api.js        # Unified API for Tauri backend
+    api-adapter.js      # Backend adapter (Tauri vs Express)
+    tauri-file-drop.js  # Tauri-specific file drop events
+    console-logger.js   # Console logging to Tauri backend
+
+    # Configuration
+    config.js           # Centralized app configuration constants
 ```
 
 ## Architecture Overview
@@ -62,9 +110,10 @@ public/                 # Static frontend assets
 
 #### Frontend Architecture
 - SVG.js handles canvas rendering and element interactions
-- Modular JavaScript: separate files for canvas, navigation, drag-drop, touch
+- 32 modular JavaScript files organized by responsibility (see Project Structure)
 - Element selection/dragging system with resize handles
 - Real-time canvas updates with auto-save functionality
+- Tauri integration layer for desktop app with backend adapter pattern
 
 ### Storage Strategy
 - File-based persistence in `server/storage/` directory
