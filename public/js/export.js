@@ -115,13 +115,10 @@ async function exportCanvasToPNG() {
 
                     // Convert to PNG
                     canvas.toBlob(async (blob) => {
-                        if (isTauri) {
-                            // Use Tauri's save dialog
+                        if (isTauri && window.__TAURI__.dialog && window.__TAURI__.fs) {
+                            // Use Tauri's save dialog if available
                             try {
-                                const { save } = window.__TAURI__.dialog;
-                                const { writeBinaryFile } = window.__TAURI__.fs;
-
-                                const filePath = await save({
+                                const filePath = await window.__TAURI__.dialog.save({
                                     defaultPath: filename,
                                     filters: [{
                                         name: 'PNG Image',
@@ -132,20 +129,17 @@ async function exportCanvasToPNG() {
                                 if (filePath) {
                                     const arrayBuffer = await blob.arrayBuffer();
                                     const bytes = new Uint8Array(arrayBuffer);
-                                    await writeBinaryFile(filePath, bytes);
+                                    await window.__TAURI__.fs.writeBinaryFile(filePath, bytes);
                                     alert('Image exported successfully!');
                                 }
                             } catch (error) {
                                 console.error('Tauri save error:', error);
-                                alert('Failed to save image: ' + error.message);
+                                // Fall back to browser download
+                                downloadBinaryFile(blob, filename, 'image/png');
                             }
                         } else {
                             // Use browser download
-                            const link = document.createElement('a');
-                            link.download = filename;
-                            link.href = URL.createObjectURL(blob);
-                            link.click();
-                            URL.revokeObjectURL(link.href);
+                            downloadBinaryFile(blob, filename, 'image/png');
                         }
 
                         // Clean up
@@ -230,13 +224,33 @@ function getCurrentCanvasName() {
             return activeItem.textContent.trim().replace(/[^a-zA-Z0-9]/g, '-');
         }
     }
-    
+
     // Fallback to current canvas ID or timestamp
     if (window.getCurrentCanvasId) {
         return window.getCurrentCanvasId();
     }
-    
+
     return new Date().toISOString().slice(0, 10);
+}
+
+// Helper function to download a file in browser
+function downloadFile(content, filename, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = URL.createObjectURL(blob);
+    link.click();
+    URL.revokeObjectURL(link.href);
+}
+
+// Helper function to download binary data in browser
+function downloadBinaryFile(data, filename, mimeType) {
+    const blob = new Blob([data], { type: mimeType });
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = URL.createObjectURL(blob);
+    link.click();
+    URL.revokeObjectURL(link.href);
 }
 
 async function exportCanvasToJSON() {
@@ -297,13 +311,10 @@ async function exportCanvasToJSON() {
         const jsonString = JSON.stringify(exportData, null, 2);
         const filename = `vision-board-${getCurrentCanvasName()}.json`;
 
-        if (isTauri) {
-            // Use Tauri's save dialog
+        if (isTauri && window.__TAURI__.dialog && window.__TAURI__.fs) {
+            // Use Tauri's save dialog if available
             try {
-                const { save } = window.__TAURI__.dialog;
-                const { writeTextFile } = window.__TAURI__.fs;
-
-                const filePath = await save({
+                const filePath = await window.__TAURI__.dialog.save({
                     defaultPath: filename,
                     filters: [{
                         name: 'JSON',
@@ -312,23 +323,17 @@ async function exportCanvasToJSON() {
                 });
 
                 if (filePath) {
-                    await writeTextFile(filePath, jsonString);
+                    await window.__TAURI__.fs.writeTextFile(filePath, jsonString);
                     alert('Canvas exported successfully!');
                 }
             } catch (error) {
                 console.error('Tauri save error:', error);
-                alert('Failed to save file: ' + error.message);
+                // Fall back to browser download
+                downloadFile(jsonString, filename, 'application/json');
             }
         } else {
             // Use browser download
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const link = document.createElement('a');
-            link.download = filename;
-            link.href = URL.createObjectURL(blob);
-            link.click();
-
-            // Clean up
-            URL.revokeObjectURL(link.href);
+            downloadFile(jsonString, filename, 'application/json');
         }
 
     } catch (error) {
