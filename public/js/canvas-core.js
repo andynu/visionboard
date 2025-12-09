@@ -59,6 +59,9 @@ async function renderCanvas() {
 
     if (!currentCanvas || !currentCanvas.elements) return;
 
+    // Apply canvas background color
+    applyCanvasBackground();
+
     // Render elements - handle async image loading
     for (const element of currentCanvas.elements) {
         if (element.type === 'image') {
@@ -67,7 +70,17 @@ async function renderCanvas() {
             window.elementsAPI.addFolderToCanvas(element, canvas, currentCanvas);
         } else if (element.type === 'rectangle') {
             window.elementsAPI.addRectangleToCanvas(element, canvas, currentCanvas);
+        } else if (element.type === 'group') {
+            // Load groups from grouping module
+            if (window.grouping && window.grouping.loadGroups) {
+                // Groups are loaded separately after all elements
+            }
         }
+    }
+
+    // Load groups after elements are rendered
+    if (window.grouping && window.grouping.loadGroups) {
+        window.grouping.loadGroups(canvas, currentCanvas);
     }
 
     // Re-attach event listeners to all canvas elements after loading
@@ -77,6 +90,165 @@ async function renderCanvas() {
 
     // Hide drop zone if there are images on canvas
     hideDropZoneIfNeeded();
+}
+
+/**
+ * Apply canvas background color to the canvas container
+ */
+function applyCanvasBackground() {
+    const canvasContainer = document.getElementById('canvas');
+    if (!canvasContainer) return;
+
+    const bgColor = currentCanvas && currentCanvas.backgroundColor;
+
+    if (bgColor === 'transparent' || bgColor === 'checkerboard') {
+        // Apply checkerboard pattern for transparency
+        canvasContainer.style.background = `
+            repeating-conic-gradient(#e0e0e0 0% 25%, #ffffff 0% 50%)
+            50% / 20px 20px
+        `;
+    } else if (bgColor) {
+        canvasContainer.style.background = bgColor;
+    } else {
+        // Default white background
+        canvasContainer.style.background = '#ffffff';
+    }
+}
+
+/**
+ * Get current canvas background color
+ * @returns {string} Background color or null for default
+ */
+function getCanvasBackgroundColor() {
+    return currentCanvas ? currentCanvas.backgroundColor : null;
+}
+
+/**
+ * Set canvas background color
+ * @param {string} color - CSS color value or 'transparent'
+ */
+function setCanvasBackgroundColor(color) {
+    if (!currentCanvas) return;
+
+    // Record state for undo
+    if (window.undoRedoManager) {
+        window.undoRedoManager.recordState();
+    }
+
+    currentCanvas.backgroundColor = color;
+
+    // Apply immediately
+    applyCanvasBackground();
+
+    // Trigger auto-save
+    scheduleAutoSave();
+
+    showNotification('Background color updated');
+}
+
+/**
+ * Show background color picker dialog
+ */
+function showBackgroundColorPicker() {
+    const currentColor = getCanvasBackgroundColor() || '#ffffff';
+
+    // Create a simple modal dialog
+    const dialog = document.createElement('div');
+    dialog.className = 'bg-color-picker-dialog';
+    dialog.innerHTML = `
+        <div class="modal-overlay"></div>
+        <div class="modal-content bg-color-modal">
+            <div class="modal-header">
+                <h3>Canvas Background</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body bg-color-body">
+                <div class="bg-color-presets">
+                    <button class="bg-preset" data-color="#ffffff" title="White">
+                        <span class="bg-preset-swatch" style="background: #ffffff;"></span>
+                        <span>White</span>
+                    </button>
+                    <button class="bg-preset" data-color="#f5f5f5" title="Light Gray">
+                        <span class="bg-preset-swatch" style="background: #f5f5f5;"></span>
+                        <span>Light Gray</span>
+                    </button>
+                    <button class="bg-preset" data-color="#e0e0e0" title="Gray">
+                        <span class="bg-preset-swatch" style="background: #e0e0e0;"></span>
+                        <span>Gray</span>
+                    </button>
+                    <button class="bg-preset" data-color="#424242" title="Dark Gray">
+                        <span class="bg-preset-swatch" style="background: #424242;"></span>
+                        <span>Dark Gray</span>
+                    </button>
+                    <button class="bg-preset" data-color="#1a1a1a" title="Black">
+                        <span class="bg-preset-swatch" style="background: #1a1a1a;"></span>
+                        <span>Black</span>
+                    </button>
+                    <button class="bg-preset" data-color="transparent" title="Transparent">
+                        <span class="bg-preset-swatch bg-transparent-swatch"></span>
+                        <span>Transparent</span>
+                    </button>
+                </div>
+                <div class="bg-color-custom">
+                    <label>Custom Color:</label>
+                    <input type="color" id="bg-custom-color" value="${currentColor === 'transparent' ? '#ffffff' : currentColor}">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-button modal-cancel">Cancel</button>
+                <button class="modal-button modal-ok">Apply</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(dialog);
+
+    let selectedColor = currentColor;
+
+    // Handle preset clicks
+    dialog.querySelectorAll('.bg-preset').forEach(btn => {
+        btn.addEventListener('click', () => {
+            selectedColor = btn.dataset.color;
+            dialog.querySelectorAll('.bg-preset').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        });
+
+        // Mark current color as selected
+        if (btn.dataset.color === currentColor) {
+            btn.classList.add('selected');
+        }
+    });
+
+    // Handle custom color
+    const customColorInput = dialog.querySelector('#bg-custom-color');
+    customColorInput.addEventListener('input', (e) => {
+        selectedColor = e.target.value;
+        dialog.querySelectorAll('.bg-preset').forEach(b => b.classList.remove('selected'));
+    });
+
+    // Handle close
+    const closeDialog = () => {
+        dialog.remove();
+    };
+
+    dialog.querySelector('.modal-close').addEventListener('click', closeDialog);
+    dialog.querySelector('.modal-cancel').addEventListener('click', closeDialog);
+    dialog.querySelector('.modal-overlay').addEventListener('click', closeDialog);
+
+    // Handle apply
+    dialog.querySelector('.modal-ok').addEventListener('click', () => {
+        setCanvasBackgroundColor(selectedColor);
+        closeDialog();
+    });
+
+    // Handle escape key
+    const handleKeydown = (e) => {
+        if (e.key === 'Escape') {
+            closeDialog();
+            document.removeEventListener('keydown', handleKeydown);
+        }
+    };
+    document.addEventListener('keydown', handleKeydown);
 }
 
 function reattachEventListeners() {
@@ -625,7 +797,11 @@ window.canvasCore = {
     showDropZoneIfNeeded,
     generateId,
     getCurrentCanvas,
-    getCanvas
+    getCanvas,
+    // Background color functions
+    getCanvasBackgroundColor,
+    setCanvasBackgroundColor,
+    showBackgroundColorPicker
 };
 
 // Expose functions globally for backward compatibility

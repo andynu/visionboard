@@ -1859,3 +1859,270 @@ body {
         background: rgba(255, 69, 58, 0.15);
     }
 }
+
+/* Background Color Picker Dialog */
+.bg-color-picker-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    display: none;
+}
+
+.bg-color-picker-dialog.visible {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bg-color-picker-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.bg-color-picker-content {
+    position: relative;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    width: 320px;
+    max-width: 90vw;
+    overflow: hidden;
+}
+
+.bg-color-picker-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e5e5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.bg-color-picker-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1c1c1e;
+}
+
+.bg-color-picker-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #8e8e93;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    border-radius: 4px;
+}
+
+.bg-color-picker-close:hover {
+    background: #f0f0f0;
+    color: #1c1c1e;
+}
+
+.bg-color-picker-body {
+    padding: 20px;
+}
+
+.bg-color-section-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #8e8e93;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+}
+
+.bg-color-presets {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.bg-color-preset {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.15s ease;
+    position: relative;
+}
+
+.bg-color-preset:hover {
+    transform: scale(1.1);
+    border-color: #007aff;
+}
+
+.bg-color-preset.selected {
+    border-color: #007aff;
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.3);
+}
+
+/* Checkerboard pattern for transparent */
+.bg-color-preset.transparent-preset {
+    background-image: linear-gradient(45deg, #ccc 25%, transparent 25%),
+                      linear-gradient(-45deg, #ccc 25%, transparent 25%),
+                      linear-gradient(45deg, transparent 75%, #ccc 75%),
+                      linear-gradient(-45deg, transparent 75%, #ccc 75%);
+    background-size: 10px 10px;
+    background-position: 0 0, 0 5px, 5px -5px, -5px 0px;
+}
+
+.bg-color-custom-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.bg-color-custom-input {
+    width: 48px;
+    height: 48px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 0;
+    background: none;
+}
+
+.bg-color-custom-input::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.bg-color-custom-input::-webkit-color-swatch {
+    border: 2px solid #e5e5e5;
+    border-radius: 6px;
+}
+
+.bg-color-hex-input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'SF Mono', Monaco, Consolas, monospace;
+    text-transform: uppercase;
+}
+
+.bg-color-hex-input:focus {
+    outline: none;
+    border-color: #007aff;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.bg-color-picker-footer {
+    padding: 16px 20px;
+    border-top: 1px solid #e5e5e5;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.bg-color-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid #e5e5e5;
+    background: white;
+    color: #1c1c1e;
+    transition: all 0.15s ease;
+}
+
+.bg-color-btn:hover {
+    background: #f5f5f5;
+}
+
+.bg-color-btn-primary {
+    background: #007aff;
+    border-color: #007aff;
+    color: white;
+}
+
+.bg-color-btn-primary:hover {
+    background: #0066d6;
+    border-color: #0066d6;
+}
+
+/* Dark mode background color picker */
+@media (prefers-color-scheme: dark) {
+    .bg-color-picker-content {
+        background: #1c1c1e;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .bg-color-picker-header {
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .bg-color-picker-header h3 {
+        color: #e5e5e7;
+    }
+
+    .bg-color-picker-close:hover {
+        background: #2c2c2e;
+        color: #e5e5e7;
+    }
+
+    .bg-color-section-label {
+        color: #8e8e93;
+    }
+
+    .bg-color-preset:hover {
+        border-color: #0a84ff;
+    }
+
+    .bg-color-preset.selected {
+        border-color: #0a84ff;
+        box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.3);
+    }
+
+    .bg-color-custom-input::-webkit-color-swatch {
+        border-color: #48484a;
+    }
+
+    .bg-color-hex-input {
+        background: #2c2c2e;
+        border-color: #48484a;
+        color: #e5e5e7;
+    }
+
+    .bg-color-hex-input:focus {
+        border-color: #0a84ff;
+        box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.15);
+    }
+
+    .bg-color-picker-footer {
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .bg-color-btn {
+        background: #2c2c2e;
+        border-color: #48484a;
+        color: #e5e5e7;
+    }
+
+    .bg-color-btn:hover {
+        background: #3a3a3c;
+    }
+
+    .bg-color-btn-primary {
+        background: #0a84ff;
+        border-color: #0a84ff;
+        color: white;
+    }
+
+    .bg-color-btn-primary:hover {
+        background: #0077e6;
+        border-color: #0077e6;
+    }
+}

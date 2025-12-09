@@ -304,6 +304,8 @@ function getCanvasMenuItems() {
     items.push({ type: 'separator' });
     items.push({ label: 'Zoom to Fit', action: 'reset-view', icon: 'fa-solid fa-arrows-to-dot', shortcut: 'Ctrl+0' });
     items.push({ type: 'separator' });
+    items.push({ label: 'Set Background Color...', action: 'set-background-color', icon: 'fa-solid fa-fill-drip' });
+    items.push({ type: 'separator' });
     items.push({ label: 'Export as Image...', action: 'export-image', icon: 'fa-regular fa-image', shortcut: 'Ctrl+Shift+E' });
 
     return items;
@@ -587,6 +589,12 @@ function executeAction(action) {
         case 'export-image':
             if (window.showExportDialog) {
                 window.showExportDialog();
+            }
+            break;
+
+        case 'set-background-color':
+            if (window.canvasCore && window.canvasCore.showBackgroundColorPicker) {
+                window.canvasCore.showBackgroundColorPicker();
             }
             break;
 
