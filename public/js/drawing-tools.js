@@ -283,13 +283,18 @@ class RectangleTool extends DrawingTool {
         
         // Add to canvas elements array
         if (window.currentCanvas) {
+            // Record state before modification for undo
+            if (window.undoRedoManager) {
+                window.undoRedoManager.recordState();
+            }
+
             window.currentCanvas.elements.push(rectangleData);
-            
+
             // Add to SVG canvas and make interactive
             if (window.addRectangleToCanvas) {
                 window.addRectangleToCanvas(rectangleData);
             }
-            
+
             // Auto-save canvas
             if (window.autoSaveCanvas) {
                 window.autoSaveCanvas();

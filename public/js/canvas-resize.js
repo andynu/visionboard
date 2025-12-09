@@ -102,6 +102,12 @@ function setupResizeHandle(handle, element, corner, canvas) {
     handle.mousedown((event) => {
         event.preventDefault();
         event.stopPropagation();
+
+        // Record state before resize starts for undo
+        if (window.undoRedoManager) {
+            window.undoRedoManager.recordState();
+        }
+
         isResizing = true;
 
         // Find the handles group by ID

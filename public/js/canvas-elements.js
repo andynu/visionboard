@@ -146,6 +146,12 @@ function makeFolderInteractive(element, canvas, currentCanvas) {
 
         event.preventDefault();
         event.stopPropagation();
+
+        // Record state before drag starts for undo
+        if (window.undoRedoManager) {
+            window.undoRedoManager.recordState();
+        }
+
         isDragging = true;
 
         // Get SVG point for accurate coordinate conversion
@@ -219,6 +225,12 @@ function makeElementInteractive(element, canvas, currentCanvas) {
 
         event.preventDefault();
         event.stopPropagation();
+
+        // Record state before drag starts for undo
+        if (window.undoRedoManager) {
+            window.undoRedoManager.recordState();
+        }
+
         isDragging = true;
 
         // Get SVG point for accurate coordinate conversion

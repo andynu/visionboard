@@ -222,6 +222,12 @@ async function switchToCanvasInternal(canvasId, pushHistory = true) {
     try {
         currentCanvasId = canvasId;
         await window.canvasCore.loadCanvas(canvasId);
+
+        // Clear undo/redo history when switching canvases
+        if (window.undoRedoManager) {
+            window.undoRedoManager.clearHistory();
+        }
+
         renderTree(); // Re-render to update active state
         updateBreadcrumb();
         

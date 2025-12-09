@@ -382,6 +382,11 @@ function generateId() {
 
 // Add image from uploaded file
 async function addImageFromFile(fileInfo, x = 100, y = 100) {
+    // Record state before modification for undo
+    if (window.undoRedoManager) {
+        window.undoRedoManager.recordState();
+    }
+
     const imageData = {
         id: generateId(),
         type: 'image',
@@ -447,6 +452,11 @@ function showNewFolderDialog() {
 
 async function addFolderFromDialog(name) {
     try {
+        // Record state before modification for undo
+        if (window.undoRedoManager) {
+            window.undoRedoManager.recordState();
+        }
+
         // First create a new canvas for this folder
         const parentId = currentCanvas ? currentCanvas.id : null;
         const childCanvas = await window.canvasAPI.create(name, parentId);
@@ -494,6 +504,11 @@ async function addFolderFromDialog(name) {
 function deleteSelectedElement() {
     const selected = window.elementsAPI.getSelectedElement();
     if (!selected) return;
+
+    // Record state before modification for undo
+    if (window.undoRedoManager) {
+        window.undoRedoManager.recordState();
+    }
 
     const elementData = selected.data('elementData');
     if (elementData) {
