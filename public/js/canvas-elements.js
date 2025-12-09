@@ -116,6 +116,14 @@ function addRectangleToCanvas(rectangleData, canvas, currentCanvas) {
         })
         .attr('id', rectangleData.id);
 
+    // Apply optional properties
+    if (rectangleData.opacity !== undefined && rectangleData.opacity !== 1) {
+        rect.opacity(rectangleData.opacity);
+    }
+    if (rectangleData.cornerRadius) {
+        rect.radius(rectangleData.cornerRadius);
+    }
+
     // Store the element data
     rect.data('elementData', rectangleData);
 

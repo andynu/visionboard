@@ -603,7 +603,9 @@ function executeAction(action) {
 
         // Rectangle actions
         case 'rect-style':
-            console.log('Rectangle style - not yet implemented');
+            if (contextMenuTarget && contextMenuTargetData) {
+                showRectangleStyleEditor(contextMenuTarget, contextMenuTargetData);
+            }
             break;
 
         // Canvas actions
@@ -882,6 +884,154 @@ function applyFolderColor(folderElement, elementData, fill, stroke) {
         rect.fill(fill);
         rect.stroke(stroke);
     }
+
+    // Save current canvas
+    window.canvasCore.saveCurrentCanvas();
+}
+
+/**
+ * Show rectangle style editor dialog
+ * @param {object} rectElement - SVG.js rect element
+ * @param {object} elementData - Element data
+ */
+function showRectangleStyleEditor(rectElement, elementData) {
+    const currentFill = elementData.fill || 'none';
+    const currentStroke = elementData.stroke || '#000000';
+    const currentStrokeWidth = elementData.strokeWidth || 2;
+    const currentOpacity = elementData.opacity !== undefined ? elementData.opacity : 1;
+    const currentCornerRadius = elementData.cornerRadius || 0;
+
+    const dialog = document.createElement('div');
+    dialog.className = 'rect-style-editor-dialog';
+    dialog.innerHTML = `
+        <div class="modal-overlay"></div>
+        <div class="modal-content rect-style-modal">
+            <div class="modal-header">
+                <h3>Rectangle Style</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body rect-style-body">
+                <div class="style-row">
+                    <label>Fill Color</label>
+                    <div class="color-input-wrapper">
+                        <input type="color" id="rect-fill-color" value="${currentFill === 'none' ? '#ffffff' : currentFill}">
+                        <label class="no-fill-option">
+                            <input type="checkbox" id="rect-no-fill" ${currentFill === 'none' ? 'checked' : ''}>
+                            No fill
+                        </label>
+                    </div>
+                </div>
+                <div class="style-row">
+                    <label>Stroke Color</label>
+                    <input type="color" id="rect-stroke-color" value="${currentStroke}">
+                </div>
+                <div class="style-row">
+                    <label>Stroke Width</label>
+                    <div class="range-wrapper">
+                        <input type="range" id="rect-stroke-width" min="0" max="20" step="1" value="${currentStrokeWidth}">
+                        <span class="range-value">${currentStrokeWidth}px</span>
+                    </div>
+                </div>
+                <div class="style-row">
+                    <label>Opacity</label>
+                    <div class="range-wrapper">
+                        <input type="range" id="rect-opacity" min="0" max="1" step="0.1" value="${currentOpacity}">
+                        <span class="range-value">${Math.round(currentOpacity * 100)}%</span>
+                    </div>
+                </div>
+                <div class="style-row">
+                    <label>Corner Radius</label>
+                    <div class="range-wrapper">
+                        <input type="range" id="rect-corner-radius" min="0" max="50" step="1" value="${currentCornerRadius}">
+                        <span class="range-value">${currentCornerRadius}px</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-button modal-cancel">Cancel</button>
+                <button class="modal-button modal-ok">Apply</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(dialog);
+
+    // Get input elements
+    const fillColorInput = dialog.querySelector('#rect-fill-color');
+    const noFillCheckbox = dialog.querySelector('#rect-no-fill');
+    const strokeColorInput = dialog.querySelector('#rect-stroke-color');
+    const strokeWidthInput = dialog.querySelector('#rect-stroke-width');
+    const opacityInput = dialog.querySelector('#rect-opacity');
+    const cornerRadiusInput = dialog.querySelector('#rect-corner-radius');
+
+    // Update range display values
+    strokeWidthInput.addEventListener('input', (e) => {
+        e.target.nextElementSibling.textContent = `${e.target.value}px`;
+    });
+    opacityInput.addEventListener('input', (e) => {
+        e.target.nextElementSibling.textContent = `${Math.round(e.target.value * 100)}%`;
+    });
+    cornerRadiusInput.addEventListener('input', (e) => {
+        e.target.nextElementSibling.textContent = `${e.target.value}px`;
+    });
+
+    // Disable fill color when "no fill" is checked
+    noFillCheckbox.addEventListener('change', () => {
+        fillColorInput.disabled = noFillCheckbox.checked;
+    });
+    fillColorInput.disabled = noFillCheckbox.checked;
+
+    const closeDialog = () => {
+        dialog.remove();
+        document.removeEventListener('keydown', handleKeydown);
+    };
+
+    dialog.querySelector('.modal-close').addEventListener('click', closeDialog);
+    dialog.querySelector('.modal-cancel').addEventListener('click', closeDialog);
+    dialog.querySelector('.modal-overlay').addEventListener('click', closeDialog);
+
+    dialog.querySelector('.modal-ok').addEventListener('click', () => {
+        const styles = {
+            fill: noFillCheckbox.checked ? 'none' : fillColorInput.value,
+            stroke: strokeColorInput.value,
+            strokeWidth: parseInt(strokeWidthInput.value, 10),
+            opacity: parseFloat(opacityInput.value),
+            cornerRadius: parseInt(cornerRadiusInput.value, 10)
+        };
+        applyRectangleStyle(rectElement, elementData, styles);
+        closeDialog();
+    });
+
+    const handleKeydown = (e) => {
+        if (e.key === 'Escape') {
+            closeDialog();
+        }
+    };
+    document.addEventListener('keydown', handleKeydown);
+}
+
+/**
+ * Apply styles to rectangle element
+ */
+function applyRectangleStyle(rectElement, elementData, styles) {
+    // Record state for undo
+    if (window.undoRedoManager) {
+        window.undoRedoManager.recordState();
+    }
+
+    // Update element data
+    elementData.fill = styles.fill;
+    elementData.stroke = styles.stroke;
+    elementData.strokeWidth = styles.strokeWidth;
+    elementData.opacity = styles.opacity;
+    elementData.cornerRadius = styles.cornerRadius;
+    rectElement.data('elementData', elementData);
+
+    // Update visual
+    rectElement.fill(styles.fill);
+    rectElement.stroke({ color: styles.stroke, width: styles.strokeWidth });
+    rectElement.opacity(styles.opacity);
+    rectElement.radius(styles.cornerRadius);
 
     // Save current canvas
     window.canvasCore.saveCurrentCanvas();
