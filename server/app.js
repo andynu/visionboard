@@ -5,6 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 
 const filesRouter = require('./routes/files');
 const treeRouter = require('./routes/tree');
+const { validateCanvasId, validateFilename, validateCanvasBody } = require('./middleware/validation');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -29,7 +30,7 @@ async function ensureStorageDirectories() {
   }
 }
 
-app.get('/api/canvas/:id', async (req, res) => {
+app.get('/api/canvas/:id', validateCanvasId, async (req, res) => {
   try {
     const canvasPath = path.join(CANVASES_DIR, `${req.params.id}.json`);
     const data = await fs.readFile(canvasPath, 'utf8');
@@ -55,7 +56,7 @@ app.get('/api/canvas/:id', async (req, res) => {
   }
 });
 
-app.post('/api/canvas', async (req, res) => {
+app.post('/api/canvas', validateCanvasBody, async (req, res) => {
   try {
     const canvas = {
       version: '1.0.0',
@@ -77,7 +78,7 @@ app.post('/api/canvas', async (req, res) => {
   }
 });
 
-app.put('/api/canvas/:id', async (req, res) => {
+app.put('/api/canvas/:id', validateCanvasId, validateCanvasBody, async (req, res) => {
   try {
     const canvasPath = path.join(CANVASES_DIR, `${req.params.id}.json`);
     const canvas = {
@@ -93,7 +94,7 @@ app.put('/api/canvas/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/canvas/:id', async (req, res) => {
+app.delete('/api/canvas/:id', validateCanvasId, async (req, res) => {
   try {
     const canvasPath = path.join(CANVASES_DIR, `${req.params.id}.json`);
     await fs.unlink(canvasPath);
@@ -107,7 +108,7 @@ app.delete('/api/canvas/:id', async (req, res) => {
   }
 });
 
-app.get('/api/images/:filename', (req, res) => {
+app.get('/api/images/:filename', validateFilename, (req, res) => {
   const imagePath = path.join(IMAGES_DIR, req.params.filename);
   res.sendFile(imagePath);
 });

@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs').promises;
 const router = express.Router();
+const { validateCanvasId, validateTreeCanvasBody } = require('../middleware/validation');
 
 const STORAGE_DIR = path.join(__dirname, '../storage');
 const CANVASES_DIR = path.join(STORAGE_DIR, 'canvases');
@@ -48,7 +49,7 @@ router.put('/tree', async (req, res) => {
 });
 
 // Add canvas to tree
-router.post('/tree/canvas', async (req, res) => {
+router.post('/tree/canvas', validateTreeCanvasBody, async (req, res) => {
     try {
         await ensureTreeStructure();
         const treeData = JSON.parse(await fs.readFile(TREE_FILE, 'utf8'));
@@ -81,7 +82,7 @@ router.post('/tree/canvas', async (req, res) => {
 });
 
 // Remove canvas from tree
-router.delete('/tree/canvas/:id', async (req, res) => {
+router.delete('/tree/canvas/:id', validateCanvasId, async (req, res) => {
     try {
         await ensureTreeStructure();
         const treeData = JSON.parse(await fs.readFile(TREE_FILE, 'utf8'));
@@ -125,7 +126,7 @@ router.delete('/tree/canvas/:id', async (req, res) => {
 });
 
 // Move canvas in tree (change parent)
-router.put('/tree/canvas/:id/move', async (req, res) => {
+router.put('/tree/canvas/:id/move', validateCanvasId, validateTreeCanvasBody, async (req, res) => {
     try {
         await ensureTreeStructure();
         const treeData = JSON.parse(await fs.readFile(TREE_FILE, 'utf8'));

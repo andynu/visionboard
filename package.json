@@ -12,7 +12,7 @@
     "tauri:build": "tauri build",
     "test": "npx playwright test",
     "test:e2e": "npx playwright test",
-    "test:unit": "node --test test/unit/"
+    "test:unit": "node --test 'test/unit/**/*.test.js'"
   },
   "keywords": [],
   "author": "",
