@@ -3,7 +3,7 @@
   "name": "Test Folder",
   "parentId": "main",
   "created": "2025-08-14T22:31:37.595Z",
-  "modified": "2025-08-14T22:39:27.527Z",
+  "modified": "2025-12-09T01:59:32.181Z",
   "viewBox": {
     "x": 0,
     "y": 0,
@@ -22,5 +22,6 @@
       "rotation": 0,
       "zIndex": 1
     }
-  ]
+  ],
+  "version": "1.0.0"
 }

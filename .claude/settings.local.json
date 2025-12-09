@@ -10,7 +10,20 @@
       "Bash(grep:*)",
       "Bash(mv:*)",
       "Bash(git stash show --stat)",
-      "Read(//home/andy/.local/share/com.visionboard.app/logs/**)"
+      "Read(//home/andy/.local/share/com.visionboard.app/logs/**)",
+      "Bash(wc:*)",
+      "Bash(ls:*)",
+      "Bash(bd create:*)",
+      "Bash(bd list:*)",
+      "Bash(npm test:*)",
+      "Bash(git commit:*)",
+      "Bash(curl:*)",
+      "Bash(bd update:*)",
+      "Bash(bd ready:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(cat:*)",
+      "Bash(bd stats:*)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []
