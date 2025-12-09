@@ -118,16 +118,23 @@ function getMenuItemsForElement(elementData) {
 function getImageMenuItems(selectedCount) {
     const items = [];
 
-    // Filters submenu (placeholder for future implementation)
+    // Get current filter state
+    const filters = window.imageFilters ? window.imageFilters.getFilters(contextMenuTarget) : {};
+    const isGrayscale = filters.grayscale && filters.grayscale > 0;
+    const isSepia = filters.sepia && filters.sepia > 0;
+    const isInvert = filters.invert && filters.invert > 0;
+    const hasAnyFilter = window.imageFilters && window.imageFilters.hasFilters(contextMenuTarget);
+
+    // Filters submenu with checkmarks for active filters
     items.push({
         label: 'Filters',
         icon: 'fa-solid fa-sliders',
         submenu: [
-            { label: 'Grayscale', action: 'filter-grayscale', icon: 'fa-solid fa-droplet' },
-            { label: 'Sepia', action: 'filter-sepia', icon: 'fa-solid fa-sun' },
-            { label: 'Invert', action: 'filter-invert', icon: 'fa-solid fa-circle-half-stroke' },
+            { label: 'Grayscale', action: 'filter-grayscale', icon: 'fa-solid fa-droplet', checked: isGrayscale },
+            { label: 'Sepia', action: 'filter-sepia', icon: 'fa-solid fa-sun', checked: isSepia },
+            { label: 'Invert', action: 'filter-invert', icon: 'fa-solid fa-circle-half-stroke', checked: isInvert },
             { type: 'separator' },
-            { label: 'Reset Filters', action: 'filter-reset', icon: 'fa-solid fa-rotate-left' }
+            { label: 'Reset Filters', action: 'filter-reset', icon: 'fa-solid fa-rotate-left', disabled: !hasAnyFilter }
         ]
     });
 
@@ -290,9 +297,15 @@ function createMenuItem(item) {
     if (item.danger) {
         menuItem.classList.add('danger');
     }
+    if (item.checked) {
+        menuItem.classList.add('checked');
+    }
+
+    // Use checkmark icon if checked, otherwise use provided icon
+    const iconClass = item.checked ? 'fa-solid fa-check' : item.icon;
 
     menuItem.innerHTML = `
-        <span class="context-menu-icon"><i class="${item.icon}"></i></span>
+        <span class="context-menu-icon"><i class="${iconClass}"></i></span>
         <span class="context-menu-label">${item.label}</span>
         ${item.shortcut ? `<span class="context-menu-shortcut">${item.shortcut}</span>` : ''}
     `;

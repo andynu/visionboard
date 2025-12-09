@@ -1193,6 +1193,10 @@ body {
     color: #ff453a;
 }
 
+.context-menu-item.checked .context-menu-icon {
+    color: #30d158;
+}
+
 .context-menu-label {
     flex: 1;
 }
@@ -1277,6 +1281,10 @@ body {
 
     .context-menu-item.danger .context-menu-icon {
         color: #ff3b30;
+    }
+
+    .context-menu-item.checked .context-menu-icon {
+        color: #34c759;
     }
 
     .context-menu-shortcut {
