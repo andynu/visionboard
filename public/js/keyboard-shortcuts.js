@@ -100,11 +100,8 @@ function attachKeyboardShortcuts() {
             }
         }
 
-        // Ctrl/Cmd + Shift + G: Toggle Grayscale
-        if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'g') {
-            event.preventDefault();
-            toggleGrayscale();
-        }
+        // Note: Ctrl/Cmd + Shift + G is now used for Ungroup (handled in grouping.js)
+        // Grayscale can be toggled via right-click context menu
 
         // Ctrl/Cmd + Shift + S: Toggle Sepia (avoid conflict with Save in some apps)
         // Using Alt+S instead to avoid browser conflicts

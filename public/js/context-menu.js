@@ -99,7 +99,9 @@ function handleContextMenu(event) {
 function getMenuItemsForElement(elementData) {
     const selectedCount = window.selectionAPI.getSelectionCount();
 
-    if (elementData.type === 'image') {
+    if (elementData.type === 'group') {
+        return getGroupMenuItems(selectedCount);
+    } else if (elementData.type === 'image') {
         return getImageMenuItems(selectedCount);
     } else if (elementData.type === 'folder') {
         return getFolderMenuItems(selectedCount);
@@ -108,6 +110,30 @@ function getMenuItemsForElement(elementData) {
     }
 
     return getGenericMenuItems(selectedCount);
+}
+
+/**
+ * Get menu items for group elements
+ * @param {number} selectedCount - Number of selected elements
+ * @returns {Array} Menu items
+ */
+function getGroupMenuItems(selectedCount) {
+    const canGroup = window.grouping && window.grouping.canGroup();
+
+    return [
+        { label: 'Ungroup', action: 'ungroup', icon: 'fa-solid fa-layer-group', shortcut: 'Ctrl+Shift+G' },
+        { type: 'separator' },
+        { label: 'Cut', action: 'cut', icon: 'fa-regular fa-scissors', shortcut: 'Ctrl+X' },
+        { label: 'Copy', action: 'copy', icon: 'fa-regular fa-copy', shortcut: 'Ctrl+C' },
+        { label: 'Duplicate', action: 'duplicate', icon: 'fa-regular fa-clone', shortcut: 'Ctrl+D' },
+        { type: 'separator' },
+        { label: 'Group', action: 'group', icon: 'fa-solid fa-layer-group', shortcut: 'Ctrl+G', disabled: !canGroup },
+        { type: 'separator' },
+        { label: 'Bring to Front', action: 'bring-front', icon: 'fa-solid fa-arrow-up', shortcut: 'Ctrl+Shift+]' },
+        { label: 'Send to Back', action: 'send-back', icon: 'fa-solid fa-arrow-down', shortcut: 'Ctrl+Shift+[' },
+        { type: 'separator' },
+        { label: 'Delete', action: 'delete', icon: 'fa-regular fa-trash-can', shortcut: 'Del', danger: true }
+    ];
 }
 
 /**
@@ -142,6 +168,12 @@ function getImageMenuItems(selectedCount) {
 
     items.push({ type: 'separator' });
 
+    // Grouping options
+    const canGroup = window.grouping && window.grouping.canGroup();
+    items.push({ label: 'Group', action: 'group', icon: 'fa-solid fa-layer-group', shortcut: 'Ctrl+G', disabled: !canGroup });
+
+    items.push({ type: 'separator' });
+
     // Arrange options
     items.push({ label: 'Bring to Front', action: 'bring-to-front', icon: 'fa-solid fa-layer-group', shortcut: 'Ctrl+]' });
     items.push({ label: 'Send to Back', action: 'send-to-back', icon: 'fa-solid fa-layer-group', shortcut: 'Ctrl+[' });
@@ -173,11 +205,15 @@ function getImageMenuItems(selectedCount) {
  * @returns {Array} Menu items
  */
 function getFolderMenuItems(selectedCount) {
+    const canGroup = window.grouping && window.grouping.canGroup();
+
     return [
         { label: 'Open', action: 'folder-open', icon: 'fa-regular fa-folder-open' },
         { label: 'Rename', action: 'folder-rename', icon: 'fa-solid fa-pen', shortcut: 'F2' },
         { type: 'separator' },
         { label: 'Change Color', action: 'folder-color', icon: 'fa-solid fa-palette' },
+        { type: 'separator' },
+        { label: 'Group', action: 'group', icon: 'fa-solid fa-layer-group', shortcut: 'Ctrl+G', disabled: !canGroup },
         { type: 'separator' },
         { label: 'Bring to Front', action: 'bring-to-front', icon: 'fa-solid fa-layer-group', shortcut: 'Ctrl+]' },
         { label: 'Send to Back', action: 'send-to-back', icon: 'fa-solid fa-layer-group', shortcut: 'Ctrl+[' },
@@ -194,8 +230,12 @@ function getFolderMenuItems(selectedCount) {
  * @returns {Array} Menu items
  */
 function getRectangleMenuItems(selectedCount) {
+    const canGroup = window.grouping && window.grouping.canGroup();
+
     return [
         { label: 'Edit Style', action: 'rect-style', icon: 'fa-solid fa-pen' },
+        { type: 'separator' },
+        { label: 'Group', action: 'group', icon: 'fa-solid fa-layer-group', shortcut: 'Ctrl+G', disabled: !canGroup },
         { type: 'separator' },
         { label: 'Bring to Front', action: 'bring-to-front', icon: 'fa-solid fa-layer-group', shortcut: 'Ctrl+]' },
         { label: 'Send to Back', action: 'send-to-back', icon: 'fa-solid fa-layer-group', shortcut: 'Ctrl+[' },
@@ -228,6 +268,8 @@ function getGenericMenuItems(selectedCount) {
  * @returns {Array} Menu items
  */
 function getCanvasMenuItems() {
+    const canGroup = window.grouping && window.grouping.canGroup();
+
     return [
         { label: 'Paste', action: 'paste', icon: 'fa-regular fa-paste', shortcut: 'Ctrl+V', disabled: !window.clipboardManager || !window.clipboardManager.hasContent() },
         { type: 'separator' },
@@ -235,6 +277,7 @@ function getCanvasMenuItems() {
         { label: 'Add Folder', action: 'add-folder', icon: 'fa-regular fa-folder' },
         { type: 'separator' },
         { label: 'Select All', action: 'select-all', icon: 'fa-solid fa-object-group', shortcut: 'Ctrl+A' },
+        { label: 'Group', action: 'group', icon: 'fa-solid fa-layer-group', shortcut: 'Ctrl+G', disabled: !canGroup },
         { type: 'separator' },
         { label: 'Zoom to Fit', action: 'reset-view', icon: 'fa-solid fa-arrows-to-dot', shortcut: 'Ctrl+0' },
         { type: 'separator' },
@@ -520,6 +563,19 @@ function executeAction(action) {
         case 'export-image':
             if (window.showExportDialog) {
                 window.showExportDialog();
+            }
+            break;
+
+        // Grouping actions
+        case 'group':
+            if (window.grouping && window.grouping.canGroup()) {
+                window.grouping.groupSelectedElements();
+            }
+            break;
+
+        case 'ungroup':
+            if (window.grouping) {
+                window.grouping.ungroupElement(contextMenuTarget);
             }
             break;
 

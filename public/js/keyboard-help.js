@@ -52,8 +52,11 @@ const keyboardHelp = (function() {
             { keys: 'Escape', description: 'Deselect all' },
             { keys: 'Double-click folder', description: 'Navigate to folder canvas' },
         ]},
+        { category: 'Grouping', items: [
+            { keys: 'Ctrl+G', description: 'Group selected elements' },
+            { keys: 'Ctrl+Shift+G', description: 'Ungroup' },
+        ]},
         { category: 'Filters', items: [
-            { keys: 'Ctrl+Shift+G', description: 'Toggle grayscale' },
             { keys: 'Alt+S', description: 'Toggle sepia' },
         ]},
         { category: 'Transform', items: [
