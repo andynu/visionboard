@@ -103,6 +103,12 @@ function setupResizeHandle(handle, element, corner, canvas) {
         event.preventDefault();
         event.stopPropagation();
 
+        // Check if element is locked - prevent resizing locked elements
+        const checkElementData = element.data('elementData');
+        if (checkElementData && checkElementData.locked) {
+            return;
+        }
+
         // Record state before resize starts for undo
         if (window.undoRedoManager) {
             window.undoRedoManager.recordState();

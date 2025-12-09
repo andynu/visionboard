@@ -155,6 +155,14 @@ function makeFolderInteractive(element, canvas, currentCanvas) {
         // Ignore middle mouse button - let it bubble up for panning
         if (event.button === 1) return;
 
+        // Check if element is locked - prevent dragging locked elements
+        const elementData = element.data('elementData');
+        if (elementData && elementData.locked) {
+            // Still allow click through for selection, but don't start drag
+            event.stopPropagation();
+            return;
+        }
+
         event.preventDefault();
         event.stopPropagation();
 
@@ -287,6 +295,14 @@ function makeElementInteractive(element, canvas, currentCanvas) {
 
         // Ignore middle mouse button - let it bubble up for panning
         if (event.button === 1) return;
+
+        // Check if element is locked - prevent dragging locked elements
+        const elementData = element.data('elementData');
+        if (elementData && elementData.locked) {
+            // Still allow click through for selection, but don't start drag
+            event.stopPropagation();
+            return;
+        }
 
         event.preventDefault();
         event.stopPropagation();

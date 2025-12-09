@@ -144,6 +144,10 @@ function getGroupMenuItems(selectedCount) {
 function getImageMenuItems(selectedCount) {
     const items = [];
 
+    // Get current lock state
+    const elementData = contextMenuTarget?.data('elementData');
+    const isLocked = elementData?.locked === true;
+
     // Get current filter state
     const filters = window.imageFilters ? window.imageFilters.getFilters(contextMenuTarget) : {};
     const isGrayscale = filters.grayscale && filters.grayscale > 0;
@@ -205,7 +209,12 @@ function getImageMenuItems(selectedCount) {
     items.push({ type: 'separator' });
 
     // Lock/delete
-    items.push({ label: 'Lock', action: 'lock', icon: 'fa-solid fa-lock' });
+    items.push({
+        label: isLocked ? 'Unlock' : 'Lock',
+        action: isLocked ? 'unlock' : 'lock',
+        icon: isLocked ? 'fa-solid fa-lock-open' : 'fa-solid fa-lock',
+        shortcut: 'Ctrl+L'
+    });
     items.push({ label: 'Delete', action: 'delete', icon: 'fa-regular fa-trash-can', shortcut: 'Del', danger: true });
 
     return items;
@@ -467,6 +476,13 @@ function executeAction(action) {
         // Element actions
         case 'delete':
             window.canvasCore.deleteSelectedElement();
+            break;
+
+        case 'lock':
+        case 'unlock':
+            if (window.layersPanel) {
+                window.layersPanel.toggleLockSelected();
+            }
             break;
 
         case 'duplicate':

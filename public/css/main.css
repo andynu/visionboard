@@ -754,6 +754,35 @@ body {
     /* Selection indicator - stroke will be added via JavaScript for SVG compatibility */
 }
 
+.canvas-element.locked {
+    cursor: not-allowed;
+}
+
+.canvas-element.locked::after {
+    content: '\f023'; /* FontAwesome lock icon */
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    font-size: 14px;
+    color: rgba(251, 191, 36, 0.9);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+}
+
+/* Lock indicator overlay for SVG elements */
+.lock-indicator {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    font-size: 14px;
+    color: rgba(251, 191, 36, 0.95);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+    z-index: 100;
+}
+
 /* Resize handles - hidden by default, shown on element selection */
 .resize-handles {
     opacity: 0;

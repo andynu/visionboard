@@ -56,6 +56,7 @@ const keyboardHelp = (function() {
         { category: 'Grouping', items: [
             { keys: 'Ctrl+G', description: 'Group selected elements' },
             { keys: 'Ctrl+Shift+G', description: 'Ungroup' },
+            { keys: 'Ctrl+L', description: 'Lock/unlock selected' },
         ]},
         { category: 'Filters', items: [
             { keys: 'Alt+S', description: 'Toggle sepia' },

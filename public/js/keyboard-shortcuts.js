@@ -115,6 +115,14 @@ function attachKeyboardShortcuts() {
             event.preventDefault();
             window.canvasCore.deleteSelectedElement();
         }
+
+        // Ctrl/Cmd + L: Toggle lock on selected elements
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'l') {
+            event.preventDefault();
+            if (window.layersPanel) {
+                window.layersPanel.toggleLockSelected();
+            }
+        }
     });
 }
 

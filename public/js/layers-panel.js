@@ -341,13 +341,79 @@ function toggleLock(elementId) {
     elementData.locked = !isCurrentlyLocked;
     currentCanvas.elements[elementIndex] = elementData;
 
-    // Update SVG element data
+    // Update SVG element data and CSS class
     svgElement.data('elementData', elementData);
+    if (elementData.locked) {
+        svgElement.addClass('locked');
+    } else {
+        svgElement.removeClass('locked');
+    }
 
     // Trigger auto-save
     window.canvasCore?.scheduleAutoSave();
     refreshLayersList();
     showNotification(elementData.locked ? 'Layer locked' : 'Layer unlocked');
+}
+
+/**
+ * Toggle lock state of selected elements (for keyboard shortcut)
+ */
+function toggleLockSelected() {
+    const selectedElements = window.selectionAPI?.getSelectedElements() || [];
+    if (selectedElements.length === 0) {
+        showNotification('Select element(s) first');
+        return;
+    }
+
+    const currentCanvas = window.canvasCore?.getCurrentCanvas();
+    if (!currentCanvas) return;
+
+    // Record state for undo
+    if (window.undoRedoManager) {
+        window.undoRedoManager.recordState();
+    }
+
+    // Determine target state - if any are unlocked, lock all; otherwise unlock all
+    const anyUnlocked = selectedElements.some(el => {
+        const data = el.data?.('elementData');
+        return !data?.locked;
+    });
+    const newLockedState = anyUnlocked;
+
+    let count = 0;
+    selectedElements.forEach(svgElement => {
+        const elementData = svgElement.data?.('elementData');
+        if (!elementData) return;
+
+        const elementIndex = currentCanvas.elements.findIndex(el => el.id === elementData.id);
+        if (elementIndex === -1) return;
+
+        elementData.locked = newLockedState;
+        currentCanvas.elements[elementIndex] = elementData;
+        svgElement.data('elementData', elementData);
+
+        if (newLockedState) {
+            svgElement.addClass('locked');
+        } else {
+            svgElement.removeClass('locked');
+        }
+        count++;
+    });
+
+    window.canvasCore?.scheduleAutoSave();
+    refreshLayersList();
+    showNotification(newLockedState ? `Locked ${count} element${count > 1 ? 's' : ''}` : `Unlocked ${count} element${count > 1 ? 's' : ''}`);
+}
+
+/**
+ * Check if an element is locked
+ */
+function isElementLocked(elementId) {
+    const currentCanvas = window.canvasCore?.getCurrentCanvas();
+    if (!currentCanvas) return false;
+
+    const element = currentCanvas.elements.find(el => el.id === elementId);
+    return element?.locked === true;
 }
 
 /**
@@ -498,5 +564,7 @@ window.layersPanel = {
     open: openLayersPanel,
     close: closeLayersPanel,
     refresh: refreshLayersList,
-    isOpen: () => isPanelOpen
+    isOpen: () => isPanelOpen,
+    toggleLockSelected,
+    isElementLocked
 };
