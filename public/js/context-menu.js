@@ -492,7 +492,11 @@ function executeAction(action) {
             break;
 
         case 'reset-view':
-            resetCanvasView();
+            if (window.zoomControls) {
+                window.zoomControls.zoomToFitAll();
+            } else {
+                resetCanvasView();
+            }
             break;
 
         default:
