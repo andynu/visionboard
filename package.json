@@ -10,7 +10,9 @@
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npx playwright test",
+    "test:e2e": "npx playwright test",
+    "test:unit": "node --test test/unit/"
   },
   "keywords": [],
   "author": "",
