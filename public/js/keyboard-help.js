@@ -19,9 +19,11 @@ const keyboardHelp = (function() {
         { category: 'Editing', items: [
             { keys: 'Ctrl+Z', description: 'Undo' },
             { keys: 'Ctrl+Shift+Z', description: 'Redo' },
-            { keys: 'Ctrl+Y', description: 'Redo (alternate)' },
-            { keys: 'Delete', description: 'Delete selected element' },
-            { keys: 'Ctrl+V', description: 'Paste image from clipboard' },
+            { keys: 'Ctrl+C', description: 'Copy selected elements' },
+            { keys: 'Ctrl+X', description: 'Cut selected elements' },
+            { keys: 'Ctrl+V', description: 'Paste elements/images' },
+            { keys: 'Ctrl+D', description: 'Duplicate selection' },
+            { keys: 'Delete', description: 'Delete selected elements' },
         ]},
         { category: 'Canvas', items: [
             { keys: 'Mouse wheel', description: 'Zoom in/out' },
