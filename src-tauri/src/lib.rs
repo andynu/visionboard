@@ -317,6 +317,7 @@ fn log_error(message: String) {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             // Initialize logging plugin (works in both debug and release builds)
             app.handle().plugin(

@@ -21,6 +21,8 @@
     "fs:scope-appdata",
     "fs:scope-appdata-recursive",
     "fs:allow-download-write",
-    "fs:scope-download"
+    "fs:scope-download",
+    "dialog:default",
+    "dialog:allow-save"
   ]
 }
