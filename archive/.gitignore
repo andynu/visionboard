@@ -1,0 +1,4 @@
+# Archive directory - not tracked in git
+# Contains old test files and diagrams for reference
+*
+!.gitignore
