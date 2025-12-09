@@ -274,21 +274,15 @@ function selectElement(element) {
         handlesIds = element.getAttribute('data-resize-handles-ids');
     }
 
-    console.log('[touch.js selectElement] Looking for handles with IDs:', handlesIds);
     if (handlesIds) {
         const ids = handlesIds.split(',');
-        ids.forEach((id, index) => {
+        ids.forEach((id) => {
             const handle = document.getElementById(id);
             if (handle) {
                 handle.style.setProperty('opacity', '1', 'important');
                 handle.style.setProperty('pointer-events', 'all', 'important');
-                console.log(`[touch.js] Made handle ${index} visible: ${id}`);
-            } else {
-                console.warn(`[touch.js] Handle not found: ${id}`);
             }
         });
-    } else {
-        console.warn('[touch.js selectElement] No handles IDs stored on element');
     }
     
     // Add selected styling for folders (only for SVG.js elements)

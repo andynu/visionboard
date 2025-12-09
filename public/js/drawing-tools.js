@@ -13,16 +13,14 @@ class DrawingTool {
      * Activate this tool
      */
     activate() {
-        console.log(`Activating ${this.name} tool`);
         this.isDrawing = false;
         this.onActivate();
     }
-    
+
     /**
      * Deactivate this tool
      */
     deactivate() {
-        console.log(`Deactivating ${this.name} tool`);
         this.isDrawing = false;
         this.onDeactivate();
     }

@@ -105,9 +105,6 @@ async function handleFiles(files, dropX = null, dropY = null) {
         const file = files[i];
 
         try {
-            // Show upload progress (simplified)
-            console.log(`Uploading ${file.name}...`);
-
             const fileInfo = await uploadFile(file);
 
             // Calculate position for multiple files
@@ -122,9 +119,6 @@ async function handleFiles(files, dropX = null, dropY = null) {
 
         } catch (error) {
             console.error(`Error uploading ${file.name}:`, error);
-            // Show more specific error message
-            const errorMsg = error.message || 'Upload failed';
-            console.log(`Upload error for ${file.name}: ${errorMsg}`);
         }
     }
 }
@@ -195,9 +189,9 @@ document.addEventListener('paste', async (event) => {
                 }
             }
         } catch (error) {
-            console.log('Using default paste position');
+            // Default paste position will be used
         }
-        
+
         for (const item of imageItems) {
             const file = item.getAsFile();
             if (file) {

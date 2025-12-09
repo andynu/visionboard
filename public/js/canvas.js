@@ -1,4 +1,3 @@
-console.log('🎨🎨🎨 CANVAS.JS VERSION 1761790497 LOADING 🎨🎨🎨');
 let canvas = null;
 let currentCanvas = null;
 let isDragging = false;
@@ -60,12 +59,9 @@ async function loadCanvas(canvasId) {
 }
 
 async function renderCanvas() {
-    console.log(`[renderCanvas] Starting render, clearing canvas. Data elements count:`, currentCanvas?.elements?.length);
     canvas.clear();
 
     if (!currentCanvas || !currentCanvas.elements) return;
-
-    console.log(`[renderCanvas] Rendering ${currentCanvas.elements.length} elements`);
 
     // Render elements - handle async image loading
     for (const element of currentCanvas.elements) {
@@ -77,8 +73,6 @@ async function renderCanvas() {
             addRectangleToCanvas(element);
         }
     }
-
-    console.log(`[renderCanvas] Finished rendering. SVG children count:`, canvas.children().length);
 
     // Re-attach event listeners to all canvas elements after loading
     setTimeout(() => {
@@ -92,8 +86,6 @@ async function renderCanvas() {
 }
 
 function reattachEventListeners() {
-    console.log('Re-attaching event listeners to loaded elements...');
-    
     // Use more reliable approach: listen at SVG container level and delegate to elements
     const svgContainer = document.querySelector('#canvas svg');
     if (svgContainer) {
@@ -108,7 +100,6 @@ function reattachEventListeners() {
             
             // Check if clicked element is a canvas element
             if (target && target.classList.contains('canvas-element')) {
-                console.log('Canvas element clicked:', target.id);
                 event.stopPropagation();
                 
                 let elementToSelect = null;
@@ -132,9 +123,8 @@ function reattachEventListeners() {
                             const rectBottom = rectTop + rect.height;
                             
                             // Check if click is within rectangle bounds
-                            if (clickX >= rectLeft && clickX <= rectRight && 
+                            if (clickX >= rectLeft && clickX <= rectRight &&
                                 clickY >= rectTop && clickY <= rectBottom) {
-                                console.log('Found rectangle under image click:', element.id);
                                 target = element; // Switch target to the rectangle
                                 break;
                             }
@@ -154,42 +144,22 @@ function reattachEventListeners() {
                     try {
                         elementToSelect = canvas.select(`#${target.id}`).first();
                     } catch (e) {
-                        console.log('canvas.select failed, trying alternative approach');
+                        // Fallback selection failed, element may be invalid
                     }
                 }
                 
                 if (elementToSelect && elementToSelect.node) {
-                    console.log('Found SVG.js element, selecting:', target.id);
-                    console.log('typeof selectElement:', typeof selectElement);
-                    console.log('selectElement function exists?', typeof selectElement === 'function');
                     try {
-                        console.log('ABOUT TO CALL selectElement...');
                         selectElement(elementToSelect);
-                        console.log('selectElement call completed');
                     } catch (error) {
-                        console.error('🚨 selectElement CRASHED:', error);
-                        console.error('Error message:', error.message);
-                        console.error('Error stack:', error.stack);
+                        console.error('Selection failed:', error);
                     }
-
-                    // Debug: verify selection worked
-                    setTimeout(() => {
-                        const imageNode = selectedElement?.node;
-                        console.log('Image element ID:', imageNode?.id);
-                        console.log('Image element classes:', imageNode?.classList.toString());
-                        console.log('Has canvas-element?', imageNode?.classList.contains('canvas-element'));
-                        console.log('Has selected?', imageNode?.classList.contains('selected'));
-                        console.log('Computed filter style:', window.getComputedStyle(imageNode).filter);
-                    }, 100);
-                } else {
-                    console.log('Could not find SVG.js element for:', target.id);
                 }
             }
         };
         
         // Add the listener with capture to ensure it gets events first
         svgContainer.addEventListener('click', svgContainer._elementClickHandler, true);
-        console.log('Added unified click handler to SVG container');
     }
 }
 
@@ -226,8 +196,6 @@ async function addImageToCanvas(imageData) {
 
     // Make image interactive
     makeElementInteractive(image);
-
-    console.log(`[addImageToCanvas] Added image ${imageData.id}, total elements in canvas:`, canvas.children().length, 'total in data:', currentCanvas.elements.length);
 
     return image;
 }
@@ -411,8 +379,6 @@ function makeElementInteractive(element) {
         event.stopPropagation();
         isDragging = true;
 
-        console.log(`[drag start] Element ${element.attr('id')}, SVG children:`, canvas.children().length, 'data elements:', currentCanvas.elements.length);
-
         // Get SVG point for accurate coordinate conversion
         const svg = canvas.node;
         const pt = svg.createSVGPoint();
@@ -444,7 +410,6 @@ function makeElementInteractive(element) {
 
         const mouseup = () => {
             isDragging = false;
-            console.log(`[drag end] Element ${element.attr('id')}, SVG children:`, canvas.children().length, 'data elements:', currentCanvas.elements.length);
             updateElementPosition(element);
             document.removeEventListener('mousemove', mousemove);
             document.removeEventListener('mouseup', mouseup);
@@ -456,8 +421,6 @@ function makeElementInteractive(element) {
 }
 
 function selectElement(element) {
-    console.log('🔴🔴🔴 ABSOLUTE NEW CODE LOADED 🔴🔴🔴 selectElement called with:', element);
-    console.log('element.node:', element.node);
     deselectElement();
 
     // First hide ALL resize handles to prevent multiple visible handles
@@ -478,19 +441,13 @@ function selectElement(element) {
         // Add visual selection indicator for images using an overlay rectangle
         // (SVG <image> elements don't support stroke, so we create a rect overlay)
         if (element.type === 'image') {
-            console.log('Creating selection rectangle for image');
             const bbox = element.bbox();
-            console.log('Image bbox:', bbox);
             const selectionRect = canvas.rect(bbox.width, bbox.height)
                 .move(bbox.x, bbox.y)
                 .fill('none')
                 .stroke({ color: '#007AFF', width: 4 })
                 .attr('id', 'selection-indicator-' + element.attr('id'))
                 .attr('pointer-events', 'none'); // Don't interfere with clicks
-
-            console.log('Selection rect created:', selectionRect.node.id);
-            console.log('Selection rect stroke:', selectionRect.attr('stroke'));
-            console.log('Selection rect stroke-width:', selectionRect.attr('stroke-width'));
 
             // Store reference to remove later
             element.data('selectionRect', selectionRect);
@@ -499,21 +456,15 @@ function selectElement(element) {
     
     // Show resize handles for selected element only
     const handlesIds = element.attr('data-resize-handles-ids');
-    console.log('[selectElement] Looking for handles with IDs:', handlesIds);
     if (handlesIds) {
         const ids = handlesIds.split(',');
-        ids.forEach((id, index) => {
+        ids.forEach((id) => {
             const handle = document.getElementById(id);
             if (handle) {
                 handle.style.setProperty('opacity', '1', 'important');
                 handle.style.setProperty('pointer-events', 'all', 'important');
-                console.log(`[selectElement] Made handle ${index} visible: cx=${handle.getAttribute('cx')}, cy=${handle.getAttribute('cy')}`);
-            } else {
-                console.warn(`[selectElement] Handle not found: ${id}`);
             }
         });
-    } else {
-        console.warn('[selectElement] No handles IDs stored on element');
     }
     
     // Add selected styling for folders
@@ -580,8 +531,6 @@ function updateElementPosition(element) {
     const elementData = element.data('elementData');
 
     if (elementData) {
-        console.log(`[updateElementPosition] Updating ${elementData.id}, position: (${element.x()}, ${element.y()})`);
-
         // Update position for all elements
         elementData.x = element.x();
         elementData.y = element.y();
@@ -596,13 +545,8 @@ function updateElementPosition(element) {
         // Update in canvas data
         const index = currentCanvas.elements.findIndex(el => el.id === elementData.id);
         if (index !== -1) {
-            console.log(`[updateElementPosition] Found element at index ${index}, updating in place`);
             currentCanvas.elements[index] = elementData;
-        } else {
-            console.warn(`[updateElementPosition] WARNING: Could not find element ${elementData.id} in currentCanvas.elements!`);
         }
-
-        console.log(`[updateElementPosition] After update, data elements count:`, currentCanvas.elements.length);
 
         // Trigger auto-save
         scheduleAutoSave();
@@ -611,10 +555,9 @@ function updateElementPosition(element) {
 
 async function saveCanvas() {
     if (!currentCanvas) return;
-    
+
     try {
         await window.canvasAPI.update(currentCanvas.id, currentCanvas);
-        console.log('Canvas saved successfully');
         showAutosaveNotification('Saved', 'saved');
     } catch (error) {
         console.error('Error saving canvas:', error);
@@ -836,15 +779,11 @@ function createResizeHandles(element) {
     // Store references in an array so we can treat it like a group
     const handlesArray = [handles.nw, handles.ne, handles.sw, handles.se];
 
-    console.log('[createResizeHandles] Created 4 handle circles directly on canvas');
-    console.log('[createResizeHandles] Handle radius:', handleRadius);
-
     // Force visibility on each handle
     Object.keys(handles).forEach(corner => {
         const handle = handles[corner];
         handle.node.style.opacity = '1';
         handle.node.style.pointerEvents = 'all';
-        console.log(`[createResizeHandles] ${corner} handle created:`, handle.attr('id'));
     });
 
     // Position handles initially - pass the handles object
@@ -854,8 +793,6 @@ function createResizeHandles(element) {
     Object.keys(handles).forEach(corner => {
         handles[corner].front();
     });
-
-    console.log('[createResizeHandles] Moved all handles to front of SVG');
 
     // Add resize functionality to each handle
     setupResizeHandle(handles.nw, element, 'nw');
@@ -896,9 +833,6 @@ function updateResizeHandles(element, handles) {
     handles[1].center(x + width + handleOffset, y - handleOffset); // ne
     handles[2].center(x - handleOffset, y + height + handleOffset); // sw
     handles[3].center(x + width + handleOffset, y + height + handleOffset); // se
-
-    console.log(`[updateResizeHandles] Positioned ${handles.length} handles for element at (${x}, ${y}) size ${width}x${height}`);
-    console.log(`[updateResizeHandles] NW handle at (${x - handleOffset}, ${y - handleOffset})`);
 }
 
 function setupResizeHandle(handle, element, corner) {
