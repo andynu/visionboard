@@ -50,13 +50,15 @@ async function exportCanvasToPNG() {
             return;
         }
 
+        const isTauri = window.isTauriApp && window.isTauriApp();
+
         // Clone the SVG to avoid modifying the original
         const svgClone = svgElement.cloneNode(true);
-        
+
         // Get the viewBox or default dimensions
         const viewBox = svgElement.getAttribute('viewBox');
         let width, height;
-        
+
         if (viewBox) {
             const [x, y, w, h] = viewBox.split(' ').map(Number);
             width = w;
@@ -70,7 +72,7 @@ async function exportCanvasToPNG() {
         // Set explicit dimensions for export
         svgClone.setAttribute('width', width);
         svgClone.setAttribute('height', height);
-        
+
         // Add white background if none exists
         const existingRect = svgClone.querySelector('rect[fill="white"]');
         if (!existingRect) {
@@ -83,8 +85,10 @@ async function exportCanvasToPNG() {
             svgClone.insertBefore(backgroundRect, svgClone.firstChild);
         }
 
-        // Convert external images to embedded data URLs
-        await embedImagesInSVG(svgClone);
+        // Convert external images to embedded data URLs (skip in Tauri - will fail)
+        if (!isTauri) {
+            await embedImagesInSVG(svgClone);
+        }
 
         // Create a blob from the SVG
         const svgData = new XMLSerializer().serializeToString(svgClone);
@@ -93,43 +97,71 @@ async function exportCanvasToPNG() {
 
         // Create an image element to convert SVG to PNG
         const img = new Image();
-        
+        const filename = `vision-board-${getCurrentCanvasName()}.png`;
+
         return new Promise((resolve, reject) => {
-            img.onload = () => {
+            img.onload = async () => {
                 try {
                     // Create a canvas for conversion
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
-                    
+
                     // Set canvas dimensions
                     canvas.width = width;
                     canvas.height = height;
-                    
+
                     // Draw the image onto the canvas
                     ctx.drawImage(img, 0, 0, width, height);
-                    
-                    // Convert to PNG and download
-                    canvas.toBlob((blob) => {
-                        const link = document.createElement('a');
-                        link.download = `vision-board-${getCurrentCanvasName()}.png`;
-                        link.href = URL.createObjectURL(blob);
-                        link.click();
-                        
+
+                    // Convert to PNG
+                    canvas.toBlob(async (blob) => {
+                        if (isTauri) {
+                            // Use Tauri's save dialog
+                            try {
+                                const { save } = window.__TAURI__.dialog;
+                                const { writeBinaryFile } = window.__TAURI__.fs;
+
+                                const filePath = await save({
+                                    defaultPath: filename,
+                                    filters: [{
+                                        name: 'PNG Image',
+                                        extensions: ['png']
+                                    }]
+                                });
+
+                                if (filePath) {
+                                    const arrayBuffer = await blob.arrayBuffer();
+                                    const bytes = new Uint8Array(arrayBuffer);
+                                    await writeBinaryFile(filePath, bytes);
+                                    alert('Image exported successfully!');
+                                }
+                            } catch (error) {
+                                console.error('Tauri save error:', error);
+                                alert('Failed to save image: ' + error.message);
+                            }
+                        } else {
+                            // Use browser download
+                            const link = document.createElement('a');
+                            link.download = filename;
+                            link.href = URL.createObjectURL(blob);
+                            link.click();
+                            URL.revokeObjectURL(link.href);
+                        }
+
                         // Clean up
                         URL.revokeObjectURL(svgUrl);
-                        URL.revokeObjectURL(link.href);
-                        
                         resolve();
                     }, 'image/png');
                 } catch (error) {
                     reject(error);
                 }
             };
-            
+
             img.onerror = () => {
+                URL.revokeObjectURL(svgUrl);
                 reject(new Error('Failed to load SVG for conversion'));
             };
-            
+
             img.src = svgUrl;
         });
 
@@ -215,27 +247,36 @@ async function exportCanvasToJSON() {
             return;
         }
 
-        // Clone elements and convert image URLs to base64
-        const elementsWithEmbeddedImages = await Promise.all(
-            (window.currentCanvas.elements || []).map(async (element) => {
-                if (element.type === 'image' && element.src && !element.src.startsWith('data:')) {
-                    try {
-                        // Convert relative URLs to absolute
-                        const absoluteUrl = new URL(element.src, window.location.origin).href;
-                        const base64Data = await imageToDataUrl(absoluteUrl);
-                        return {
-                            ...element,
-                            src: base64Data
-                        };
-                    } catch (error) {
-                        console.warn('Failed to embed image:', element.src, error);
-                        // Keep original URL if conversion fails
-                        return element;
+        // Clone elements - skip image embedding in Tauri mode, keep original refs
+        const isTauri = window.isTauriApp && window.isTauriApp();
+        let elementsForExport;
+
+        if (isTauri) {
+            // In Tauri, just use elements as-is (no image embedding)
+            elementsForExport = window.currentCanvas.elements || [];
+        } else {
+            // In browser mode, try to embed images as base64
+            elementsForExport = await Promise.all(
+                (window.currentCanvas.elements || []).map(async (element) => {
+                    if (element.type === 'image' && element.src && !element.src.startsWith('data:')) {
+                        try {
+                            // Convert relative URLs to absolute
+                            const absoluteUrl = new URL(element.src, window.location.origin).href;
+                            const base64Data = await imageToDataUrl(absoluteUrl);
+                            return {
+                                ...element,
+                                src: base64Data
+                            };
+                        } catch (error) {
+                            console.warn('Failed to embed image:', element.src, error);
+                            // Keep original URL if conversion fails
+                            return element;
+                        }
                     }
-                }
-                return element;
-            })
-        );
+                    return element;
+                })
+            );
+        }
 
         // Create export data with metadata
         const exportData = {
@@ -245,7 +286,7 @@ async function exportCanvasToJSON() {
                 id: window.currentCanvas.id,
                 name: window.currentCanvas.name || 'Untitled Canvas',
                 parentId: window.currentCanvas.parentId || null,
-                elements: elementsWithEmbeddedImages,
+                elements: elementsForExport,
                 viewBox: window.currentCanvas.viewBox || "0 0 1920 1080",
                 created: window.currentCanvas.created,
                 modified: window.currentCanvas.modified
@@ -254,17 +295,42 @@ async function exportCanvasToJSON() {
 
         // Convert to JSON string with formatting
         const jsonString = JSON.stringify(exportData, null, 2);
-        
-        // Create blob and download
-        const blob = new Blob([jsonString], { type: 'application/json' });
-        const link = document.createElement('a');
-        link.download = `vision-board-${getCurrentCanvasName()}.json`;
-        link.href = URL.createObjectURL(blob);
-        link.click();
-        
-        // Clean up
-        URL.revokeObjectURL(link.href);
-        
+        const filename = `vision-board-${getCurrentCanvasName()}.json`;
+
+        if (isTauri) {
+            // Use Tauri's save dialog
+            try {
+                const { save } = window.__TAURI__.dialog;
+                const { writeTextFile } = window.__TAURI__.fs;
+
+                const filePath = await save({
+                    defaultPath: filename,
+                    filters: [{
+                        name: 'JSON',
+                        extensions: ['json']
+                    }]
+                });
+
+                if (filePath) {
+                    await writeTextFile(filePath, jsonString);
+                    alert('Canvas exported successfully!');
+                }
+            } catch (error) {
+                console.error('Tauri save error:', error);
+                alert('Failed to save file: ' + error.message);
+            }
+        } else {
+            // Use browser download
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = URL.createObjectURL(blob);
+            link.click();
+
+            // Clean up
+            URL.revokeObjectURL(link.href);
+        }
+
     } catch (error) {
         console.error('JSON export error:', error);
         alert('Failed to export canvas as JSON: ' + error.message);
