@@ -47,6 +47,11 @@ async function addImageToCanvas(imageData, canvas, currentCanvas) {
         window.imageFilters.applyLoadedFilters(image, imageData);
     }
 
+    // Apply transforms if present (flip, etc.)
+    if (window.transform && (imageData.flipH || imageData.flipV)) {
+        window.transform.applyLoadedTransforms(image, imageData);
+    }
+
     // Make image interactive
     makeElementInteractive(image, canvas, currentCanvas);
 

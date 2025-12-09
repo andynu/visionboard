@@ -417,13 +417,17 @@ function executeAction(action) {
             }
             break;
 
-        // Transform actions (placeholders)
+        // Transform actions
         case 'flip-horizontal':
-            console.log('Flip horizontal - not yet implemented');
+            if (window.transform) {
+                window.transform.flipSelectedHorizontal();
+            }
             break;
 
         case 'flip-vertical':
-            console.log('Flip vertical - not yet implemented');
+            if (window.transform) {
+                window.transform.flipSelectedVertical();
+            }
             break;
 
         // Lock action (placeholder)

@@ -56,6 +56,10 @@ const keyboardHelp = (function() {
             { keys: 'Ctrl+Shift+G', description: 'Toggle grayscale' },
             { keys: 'Alt+S', description: 'Toggle sepia' },
         ]},
+        { category: 'Transform', items: [
+            { keys: 'Ctrl+Shift+H', description: 'Flip horizontal' },
+            { keys: 'Alt+V', description: 'Flip vertical' },
+        ]},
     ];
 
     function createOverlay() {
