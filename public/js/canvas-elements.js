@@ -270,6 +270,11 @@ function makeFolderInteractive(element, canvas, currentCanvas) {
     if (window.elementTooltip) {
         window.elementTooltip.attachHandlers(element);
     }
+
+    // Attach note handlers (shows indicator if element has a note)
+    if (window.elementNotes) {
+        window.elementNotes.attachHandlers(element);
+    }
 }
 
 function makeElementInteractive(element, canvas, currentCanvas) {
@@ -415,6 +420,11 @@ function makeElementInteractive(element, canvas, currentCanvas) {
     // Attach tooltip handlers
     if (window.elementTooltip) {
         window.elementTooltip.attachHandlers(element);
+    }
+
+    // Attach note handlers (shows indicator if element has a note)
+    if (window.elementNotes) {
+        window.elementNotes.attachHandlers(element);
     }
 }
 

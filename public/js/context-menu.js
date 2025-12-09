@@ -208,6 +208,16 @@ function getImageMenuItems(selectedCount) {
 
     items.push({ type: 'separator' });
 
+    // Notes
+    const hasNote = window.elementNotes && window.elementNotes.hasNote(contextMenuTarget);
+    items.push({
+        label: hasNote ? 'Edit Note...' : 'Add Note...',
+        action: 'edit-note',
+        icon: 'fa-solid fa-sticky-note'
+    });
+
+    items.push({ type: 'separator' });
+
     // Lock/delete
     items.push({
         label: isLocked ? 'Unlock' : 'Lock',
@@ -227,12 +237,15 @@ function getImageMenuItems(selectedCount) {
  */
 function getFolderMenuItems(selectedCount) {
     const canGroup = window.grouping && window.grouping.canGroup();
+    const hasNote = window.elementNotes && window.elementNotes.hasNote(contextMenuTarget);
 
     return [
         { label: 'Open', action: 'folder-open', icon: 'fa-regular fa-folder-open' },
         { label: 'Rename', action: 'folder-rename', icon: 'fa-solid fa-pen', shortcut: 'F2' },
         { type: 'separator' },
         { label: 'Change Color', action: 'folder-color', icon: 'fa-solid fa-palette' },
+        { type: 'separator' },
+        { label: hasNote ? 'Edit Note...' : 'Add Note...', action: 'edit-note', icon: 'fa-solid fa-sticky-note' },
         { type: 'separator' },
         { label: 'Group', action: 'group', icon: 'fa-solid fa-layer-group', shortcut: 'Ctrl+G', disabled: !canGroup },
         { type: 'separator' },
@@ -252,9 +265,12 @@ function getFolderMenuItems(selectedCount) {
  */
 function getRectangleMenuItems(selectedCount) {
     const canGroup = window.grouping && window.grouping.canGroup();
+    const hasNote = window.elementNotes && window.elementNotes.hasNote(contextMenuTarget);
 
     return [
         { label: 'Edit Style', action: 'rect-style', icon: 'fa-solid fa-pen' },
+        { type: 'separator' },
+        { label: hasNote ? 'Edit Note...' : 'Add Note...', action: 'edit-note', icon: 'fa-solid fa-sticky-note' },
         { type: 'separator' },
         { label: 'Group', action: 'group', icon: 'fa-solid fa-layer-group', shortcut: 'Ctrl+G', disabled: !canGroup },
         { type: 'separator' },
@@ -623,6 +639,13 @@ function executeAction(action) {
         case 'set-background-color':
             if (window.canvasCore && window.canvasCore.showBackgroundColorPicker) {
                 window.canvasCore.showBackgroundColorPicker();
+            }
+            break;
+
+        // Notes
+        case 'edit-note':
+            if (contextMenuTarget && window.elementNotes) {
+                window.elementNotes.openEditor(contextMenuTarget);
             }
             break;
 

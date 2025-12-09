@@ -2520,3 +2520,166 @@ body {
     padding-top: 4px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+/* Note Editor Modal */
+.note-editor-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10002;
+    display: none;
+}
+
+.note-editor-modal.visible {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.note-editor-modal .modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.note-editor-modal .modal-content {
+    position: relative;
+    background: #1c1c1e;
+    border-radius: 12px;
+    width: 400px;
+    max-width: 90vw;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.note-editor-modal .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.note-editor-modal .modal-header h3 {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.note-editor-modal .modal-close {
+    background: none;
+    border: none;
+    color: #8e8e93;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.note-editor-modal .modal-close:hover {
+    color: #fff;
+}
+
+.note-editor-modal .modal-body {
+    padding: 20px;
+}
+
+.note-editor-modal .note-textarea {
+    width: 100%;
+    height: 150px;
+    background: #2c2c2e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    font-family: inherit;
+    padding: 12px;
+    resize: vertical;
+}
+
+.note-editor-modal .note-textarea:focus {
+    outline: none;
+    border-color: #818cf8;
+}
+
+.note-editor-modal .note-textarea::placeholder {
+    color: #6b6b6d;
+}
+
+.note-editor-modal .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.note-editor-modal .modal-button {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.note-editor-modal .modal-cancel {
+    background: #3a3a3c;
+    color: #fff;
+}
+
+.note-editor-modal .modal-cancel:hover {
+    background: #4a4a4c;
+}
+
+.note-editor-modal .modal-ok {
+    background: #818cf8;
+    color: #fff;
+}
+
+.note-editor-modal .modal-ok:hover {
+    background: #6366f1;
+}
+
+.note-editor-modal .modal-delete {
+    background: #ef4444;
+    color: #fff;
+    margin-right: auto;
+}
+
+.note-editor-modal .modal-delete:hover {
+    background: #dc2626;
+}
+
+/* Note Indicator */
+.note-indicator {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: #fbbf24;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 100;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: transform 0.15s, background 0.15s;
+}
+
+.note-indicator:hover {
+    transform: scale(1.1);
+    background: #f59e0b;
+}
+
+.note-indicator i {
+    color: #1c1c1e;
+    font-size: 11px;
+}
