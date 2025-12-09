@@ -153,10 +153,32 @@ function renderTreeNode(canvasId, level) {
     label.className = 'tree-label';
     label.textContent = canvasInfo.name;
 
+    // Handle single vs double click on label
+    let clickTimeout = null;
+
+    label.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (clickTimeout) {
+            // Double-click detected, cancel single-click action
+            clearTimeout(clickTimeout);
+            clickTimeout = null;
+            return;
+        }
+        // Delay single-click action to detect potential double-click
+        clickTimeout = setTimeout(() => {
+            clickTimeout = null;
+            switchToCanvas(canvasId);
+        }, 250);
+    });
+
     // Double-click to rename (except main canvas)
     if (canvasId !== 'main') {
         label.addEventListener('dblclick', (e) => {
             e.stopPropagation();
+            if (clickTimeout) {
+                clearTimeout(clickTimeout);
+                clickTimeout = null;
+            }
             startRename(label, canvasId, canvasInfo.name);
         });
         label.title = 'Double-click to rename';
