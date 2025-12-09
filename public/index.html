@@ -69,6 +69,7 @@
                 <div class="toolbar-separator"></div>
                 <button id="grid-btn" title="Toggle Grid (G)"><i class="fas fa-border-all"></i></button>
                 <button id="snap-btn" title="Toggle Snap (S)"><i class="fas fa-magnet"></i></button>
+                <button id="layers-btn" title="Toggle Layers Panel (Shift+L)"><i class="fas fa-layer-group"></i></button>
                 <div class="toolbar-separator"></div>
                 <button id="help-btn" title="Keyboard Shortcuts (?)"><i class="far fa-keyboard"></i></button>
             </div>
@@ -96,6 +97,19 @@
                     </div>
                 </div>
             </main>
+
+            <!-- Layers Panel (right side) -->
+            <aside class="layers-panel" id="layers-panel">
+                <div class="layers-panel-header">
+                    <h3>Layers</h3>
+                    <button id="layers-panel-close" class="layers-panel-close"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="layers-list-container">
+                    <div id="layers-list" class="layers-list">
+                        <!-- Layers will be populated by JavaScript -->
+                    </div>
+                </div>
+            </aside>
         </div>
     </div>
 
@@ -151,6 +165,7 @@
     <script src="js/export.js"></script>
     <script src="js/grouping.js"></script>
     <script src="js/alignment.js"></script>
+    <script src="js/layers-panel.js"></script>
     <script src="js/context-menu.js"></script>
     <script>
         // Initialize the application
