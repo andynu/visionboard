@@ -36,7 +36,7 @@ export const canvasAPI = {
         }
         return await invoke('create_canvas', {
             name: name || null,
-            parent_id: parentId || null
+            parentId: parentId || null
         });
     },
 
@@ -46,7 +46,7 @@ export const canvasAPI = {
         }
         return await invoke('update_canvas', {
             id,
-            canvas_data: canvasData
+            canvasData: canvasData
         });
     },
 
@@ -71,7 +71,7 @@ export const treeAPI = {
         if (!isTauri) {
             throw new Error('Tauri API not available');
         }
-        return await invoke('update_tree', { tree_data: treeData });
+        return await invoke('update_tree', { treeData: treeData });
     }
 };
 

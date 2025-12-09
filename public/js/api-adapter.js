@@ -35,7 +35,7 @@
             if (isTauri) {
                 return await window.__TAURI__.core.invoke('create_canvas', {
                     name: name || null,
-                    parent_id: parentId || null
+                    parentId: parentId || null
                 });
             } else {
                 const response = await fetch('/api/canvas', {
@@ -93,7 +93,7 @@
         async update(treeData) {
             if (isTauri) {
                 return await window.__TAURI__.core.invoke('update_tree', {
-                    tree_data: treeData
+                    treeData: treeData
                 });
             } else {
                 const response = await fetch('/api/tree', {
