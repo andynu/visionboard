@@ -26,11 +26,11 @@ function initializeTouchSupport() {
             }
         }, { passive: false });
         
-        // Prevent iOS zoom on double-tap
+        // Prevent iOS zoom on double-tap (use CONFIG for timing)
         let lastTouchEnd = 0;
         document.addEventListener('touchend', (e) => {
             const now = (new Date()).getTime();
-            if (now - lastTouchEnd <= 300) {
+            if (now - lastTouchEnd <= CONFIG.touch.doubleTapDelay) {
                 e.preventDefault();
             }
             lastTouchEnd = now;
@@ -71,7 +71,7 @@ function handleTouchMove(event) {
         const deltaY = touch.clientY - touchStartPos.y;
         const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
         
-        if (distance > 10) { // Threshold for drag vs tap
+        if (distance > CONFIG.touch.dragThreshold) { // Threshold for drag vs tap
             isPanning = true;
 
             const selected = getSelectedElement();
@@ -104,7 +104,7 @@ function handleTouchEnd(event) {
         const touch = event.changedTouches[0];
         
         // Double-tap detection
-        if (now - lastTouchTime < 300) {
+        if (now - lastTouchTime < CONFIG.touch.doubleTapDelay) {
             handleDoubleTap(touch);
         } else {
             handleSingleTap(touch);
@@ -213,7 +213,8 @@ function handleZoom(scale, center) {
 }
 
 function resetCanvasView() {
-    canvas.viewbox(0, 0, 1920, 1080);
+    const vb = CONFIG.canvas.defaultViewBox;
+    canvas.viewbox(vb.x, vb.y, vb.width, vb.height);
 }
 
 // Touch uses shared selection API from selection.js with haptic feedback option

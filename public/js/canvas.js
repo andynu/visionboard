@@ -8,15 +8,13 @@ let isPanning = false;
 let panStart = { x: 0, y: 0 };
 let viewBoxStart = { x: 0, y: 0, width: 0, height: 0 };
 let zoomLevel = 1.0;
-const minZoom = 0.1;
-const maxZoom = 10.0;
-const zoomSpeed = 0.1;
 let lastMousePosition = { x: 0, y: 0 };
 
 function initializeCanvas() {
     const canvasContainer = document.getElementById('canvas');
     canvas = SVG(canvasContainer).size('100%', '100%');
-    canvas.viewbox(-500, -300, 2420, 1380);
+    const vb = CONFIG.canvas.initialViewBox;
+    canvas.viewbox(vb.x, vb.y, vb.width, vb.height);
     
     // Expose canvas globally for tool manager
     window.canvas = canvas;
@@ -495,8 +493,8 @@ async function addImageFromFile(fileInfo, x = 100, y = 100) {
         src: fileInfo.path,
         x: x,
         y: y,
-        width: 300,
-        height: 200,
+        width: CONFIG.element.defaultImageWidth,
+        height: CONFIG.element.defaultImageHeight,
         rotation: 0,
         zIndex: currentCanvas.elements.length + 1
     };
@@ -524,7 +522,7 @@ async function addImageFromFile(fileInfo, x = 100, y = 100) {
     img.onload = function() {
         // Calculate aspect ratio and reasonable size
         const aspectRatio = this.naturalWidth / this.naturalHeight;
-        const maxSize = 400;
+        const maxSize = CONFIG.element.maxImageSize;
 
         if (aspectRatio > 1) {
             // Landscape
@@ -658,21 +656,21 @@ function scheduleAutoSave() {
     if (autoSaveTimeout) {
         clearTimeout(autoSaveTimeout);
     }
-    
+
     // Show saving notification
     showAutosaveNotification('Saving...', 'saving');
-    
-    // Schedule save in 2 seconds
+
+    // Schedule save after debounce delay
     autoSaveTimeout = setTimeout(() => {
         saveCanvas();
-    }, 2000);
+    }, CONFIG.autosave.debounceDelay);
 }
 
 // Resize handles functionality
 function createResizeHandles(element) {
     // EXPERIMENT: Create handles as direct canvas children, NOT in a group
     // This matches the test circles that DO work
-    const handleRadius = 12;
+    const handleRadius = CONFIG.resizeHandle.radius;
 
     // Create circles DIRECTLY on canvas (not in a group)
     const handles = {
@@ -837,8 +835,8 @@ function resizeElement(element, corner, deltaX, deltaY, startData) {
     let newY = startData.elementY;
     let newWidth = startData.elementWidth;
     let newHeight = startData.elementHeight;
-    
-    const minSize = 20; // Minimum size for elements
+
+    const minSize = CONFIG.element.minSize;
     
     switch (corner) {
         case 'nw':
@@ -934,9 +932,11 @@ function showAutosaveNotification(message, type = 'saved') {
     
     // Show notification
     notification.classList.add('show');
-    
+
     // Hide after delay (longer for saving, shorter for saved/error)
-    const hideDelay = type === 'saving' ? 3000 : 1500;
+    const hideDelay = type === 'saving'
+        ? CONFIG.autosave.savingNotificationDelay
+        : CONFIG.autosave.savedNotificationDelay;
     notification.hideTimeout = setTimeout(() => {
         notification.classList.remove('show');
     }, hideDelay);
@@ -1048,11 +1048,11 @@ function setupCanvasPanning() {
         
         // Calculate zoom factor
         const zoomDirection = event.deltaY > 0 ? -1 : 1; // Invert for natural zoom direction
-        const zoomFactor = 1 + (zoomSpeed * zoomDirection);
-        
+        const zoomFactor = 1 + (CONFIG.zoom.speed * zoomDirection);
+
         // Calculate new zoom level and clamp it
         const newZoomLevel = zoomLevel * zoomFactor;
-        if (newZoomLevel < minZoom || newZoomLevel > maxZoom) {
+        if (newZoomLevel < CONFIG.zoom.min || newZoomLevel > CONFIG.zoom.max) {
             return; // Don't zoom if it would exceed limits
         }
         
