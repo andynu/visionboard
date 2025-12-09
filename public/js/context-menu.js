@@ -596,7 +596,9 @@ function executeAction(action) {
             break;
 
         case 'folder-color':
-            console.log('Folder color - not yet implemented');
+            if (contextMenuTarget && contextMenuTargetData) {
+                showFolderColorPicker(contextMenuTarget, contextMenuTargetData);
+            }
             break;
 
         // Rectangle actions
@@ -765,6 +767,124 @@ async function renameFolderElement(folderElement, elementData, newName) {
         console.error('Error renaming folder:', error);
         alert('Failed to rename folder');
     }
+}
+
+// Folder color presets (fill, stroke)
+const FOLDER_COLOR_PRESETS = [
+    { name: 'Orange', fill: '#FFF3E0', stroke: '#FF9800' },
+    { name: 'Blue', fill: '#E3F2FD', stroke: '#2196F3' },
+    { name: 'Green', fill: '#E8F5E9', stroke: '#4CAF50' },
+    { name: 'Purple', fill: '#F3E5F5', stroke: '#9C27B0' },
+    { name: 'Red', fill: '#FFEBEE', stroke: '#F44336' },
+    { name: 'Yellow', fill: '#FFFDE7', stroke: '#FFC107' },
+    { name: 'Teal', fill: '#E0F2F1', stroke: '#009688' },
+    { name: 'Gray', fill: '#F5F5F5', stroke: '#9E9E9E' }
+];
+
+/**
+ * Show folder color picker dialog
+ * @param {object} folderElement - SVG.js group element
+ * @param {object} elementData - Element data
+ */
+function showFolderColorPicker(folderElement, elementData) {
+    const currentFill = elementData.fill || '#FFF3E0';
+    const currentStroke = elementData.stroke || '#FF9800';
+
+    // Build preset buttons
+    const presetButtons = FOLDER_COLOR_PRESETS.map(preset => {
+        const isSelected = preset.fill === currentFill && preset.stroke === currentStroke;
+        return `
+            <button class="folder-color-preset ${isSelected ? 'selected' : ''}"
+                    data-fill="${preset.fill}"
+                    data-stroke="${preset.stroke}"
+                    title="${preset.name}">
+                <span class="folder-color-swatch" style="background: ${preset.fill}; border-color: ${preset.stroke};"></span>
+                <span>${preset.name}</span>
+            </button>
+        `;
+    }).join('');
+
+    const dialog = document.createElement('div');
+    dialog.className = 'folder-color-picker-dialog';
+    dialog.innerHTML = `
+        <div class="modal-overlay"></div>
+        <div class="modal-content folder-color-modal">
+            <div class="modal-header">
+                <h3>Folder Color</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body folder-color-body">
+                <div class="folder-color-presets">
+                    ${presetButtons}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-button modal-cancel">Cancel</button>
+                <button class="modal-button modal-ok">Apply</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(dialog);
+
+    let selectedFill = currentFill;
+    let selectedStroke = currentStroke;
+
+    // Handle preset clicks
+    dialog.querySelectorAll('.folder-color-preset').forEach(btn => {
+        btn.addEventListener('click', () => {
+            selectedFill = btn.dataset.fill;
+            selectedStroke = btn.dataset.stroke;
+            dialog.querySelectorAll('.folder-color-preset').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        });
+    });
+
+    const closeDialog = () => {
+        dialog.remove();
+        document.removeEventListener('keydown', handleKeydown);
+    };
+
+    dialog.querySelector('.modal-close').addEventListener('click', closeDialog);
+    dialog.querySelector('.modal-cancel').addEventListener('click', closeDialog);
+    dialog.querySelector('.modal-overlay').addEventListener('click', closeDialog);
+
+    dialog.querySelector('.modal-ok').addEventListener('click', () => {
+        applyFolderColor(folderElement, elementData, selectedFill, selectedStroke);
+        closeDialog();
+    });
+
+    const handleKeydown = (e) => {
+        if (e.key === 'Escape') {
+            closeDialog();
+        }
+    };
+    document.addEventListener('keydown', handleKeydown);
+}
+
+/**
+ * Apply color to folder element
+ */
+function applyFolderColor(folderElement, elementData, fill, stroke) {
+    // Record state for undo
+    if (window.undoRedoManager) {
+        window.undoRedoManager.recordState();
+    }
+
+    // Update element data
+    elementData.fill = fill;
+    elementData.stroke = stroke;
+    folderElement.data('elementData', elementData);
+
+    // Update visual - find the rect inside the group
+    const rect = folderElement.find('rect').first();
+    if (rect) {
+        rect.fill(fill);
+        rect.stroke(stroke);
+    }
+
+    // Save current canvas
+    window.canvasCore.saveCurrentCanvas();
 }
 
 /**

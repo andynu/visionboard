@@ -64,10 +64,12 @@ function addFolderToCanvas(folderData, canvas, currentCanvas) {
         .attr('id', folderData.id);
 
     // Create folder background (positioned relative to group origin)
+    const fillColor = folderData.fill || '#FFF3E0';
+    const strokeColor = folderData.stroke || '#FF9800';
     const rect = group.rect(folderData.width, folderData.height)
         .move(0, 0)
-        .fill('#FFF3E0')
-        .stroke('#FF9800')
+        .fill(fillColor)
+        .stroke(strokeColor)
         .stroke({ width: 2 })
         .radius(8);
 
