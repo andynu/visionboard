@@ -33,10 +33,18 @@ function setupSidebarToggle() {
 }
 
 function setupTreeEventListeners() {
-    // New canvas button
+    // New canvas button (toolbar)
     document.getElementById('new-canvas-btn').addEventListener('click', () => {
         showNewCanvasDialog();
     });
+
+    // New canvas button (sidebar)
+    const sidebarNewBtn = document.getElementById('sidebar-new-canvas-btn');
+    if (sidebarNewBtn) {
+        sidebarNewBtn.addEventListener('click', () => {
+            showNewCanvasDialog();
+        });
+    }
 }
 
 function setupBrowserHistory() {

@@ -518,6 +518,23 @@ body {
     color: #fff;
 }
 
+.sidebar-new-canvas {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0.35rem 0.5rem;
+    margin-left: auto;
+    color: #818cf8;
+    border-radius: 4px;
+    transition: color 0.15s ease, background 0.15s ease;
+}
+
+.sidebar-new-canvas:hover {
+    background: rgba(129, 140, 248, 0.15);
+    color: #a5b4fc;
+}
+
 .tree-container {
     flex: 1;
     overflow-y: auto;
