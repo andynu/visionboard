@@ -42,6 +42,11 @@ async function addImageToCanvas(imageData, canvas, currentCanvas) {
     // Store the element data
     image.data('elementData', imageData);
 
+    // Apply filters if present (load from saved data)
+    if (window.imageFilters && imageData.filters) {
+        window.imageFilters.applyLoadedFilters(image, imageData);
+    }
+
     // Make image interactive
     makeElementInteractive(image, canvas, currentCanvas);
 

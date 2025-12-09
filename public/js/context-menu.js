@@ -412,21 +412,29 @@ function executeAction(action) {
             console.log('Lock - not yet implemented');
             break;
 
-        // Filter actions (placeholders)
+        // Filter actions
         case 'filter-grayscale':
-            console.log('Grayscale filter - not yet implemented');
+            if (contextMenuTarget && window.imageFilters) {
+                window.imageFilters.toggleFilter(contextMenuTarget, 'grayscale');
+            }
             break;
 
         case 'filter-sepia':
-            console.log('Sepia filter - not yet implemented');
+            if (contextMenuTarget && window.imageFilters) {
+                window.imageFilters.toggleFilter(contextMenuTarget, 'sepia');
+            }
             break;
 
         case 'filter-invert':
-            console.log('Invert filter - not yet implemented');
+            if (contextMenuTarget && window.imageFilters) {
+                window.imageFilters.toggleFilter(contextMenuTarget, 'invert');
+            }
             break;
 
         case 'filter-reset':
-            console.log('Reset filters - not yet implemented');
+            if (contextMenuTarget && window.imageFilters) {
+                window.imageFilters.resetFilters(contextMenuTarget);
+            }
             break;
 
         // Folder actions
