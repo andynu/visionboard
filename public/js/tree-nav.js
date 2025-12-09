@@ -152,7 +152,16 @@ function renderTreeNode(canvasId, level) {
     const label = document.createElement('span');
     label.className = 'tree-label';
     label.textContent = canvasInfo.name;
-    
+
+    // Double-click to rename (except main canvas)
+    if (canvasId !== 'main') {
+        label.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            startRename(label, canvasId, canvasInfo.name);
+        });
+        label.title = 'Double-click to rename';
+    }
+
     // Actions
     const actions = document.createElement('div');
     actions.className = 'tree-actions';
@@ -400,6 +409,80 @@ async function deleteCanvas(canvasId) {
     } catch (error) {
         console.error('Error deleting canvas:', error);
         alert('Failed to delete canvas');
+    }
+}
+
+function startRename(labelElement, canvasId, currentName) {
+    // Create input element
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'tree-rename-input';
+    input.value = currentName;
+
+    // Replace label with input
+    const parent = labelElement.parentNode;
+    parent.replaceChild(input, labelElement);
+
+    // Focus and select text
+    input.focus();
+    input.select();
+
+    let saved = false;
+
+    const saveRename = async () => {
+        if (saved) return;
+        saved = true;
+
+        const newName = input.value.trim();
+        if (newName && newName !== currentName) {
+            await renameCanvas(canvasId, newName);
+        } else {
+            // Restore original label if no change or empty
+            parent.replaceChild(labelElement, input);
+        }
+    };
+
+    // Save on blur
+    input.addEventListener('blur', saveRename);
+
+    // Save on Enter, cancel on Escape
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            input.blur();
+        } else if (e.key === 'Escape') {
+            saved = true;
+            parent.replaceChild(labelElement, input);
+        }
+    });
+
+    // Prevent click from bubbling to tree item
+    input.addEventListener('click', (e) => e.stopPropagation());
+}
+
+async function renameCanvas(canvasId, newName) {
+    try {
+        // Update tree data
+        if (treeData.canvases[canvasId]) {
+            treeData.canvases[canvasId].name = newName;
+            await window.treeAPI.update(treeData);
+        }
+
+        // Update canvas data
+        const canvas = await window.canvasAPI.get(canvasId);
+        if (canvas) {
+            canvas.name = newName;
+            await window.canvasAPI.update(canvasId, canvas);
+        }
+
+        // Re-render tree and breadcrumb
+        renderTree();
+        updateBreadcrumb();
+
+    } catch (error) {
+        console.error('Error renaming canvas:', error);
+        alert('Failed to rename canvas');
+        renderTree(); // Restore original state
     }
 }
 

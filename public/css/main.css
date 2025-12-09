@@ -622,6 +622,23 @@ body {
     font-weight: 500;
 }
 
+.tree-rename-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #818cf8;
+    border-radius: 3px;
+    padding: 0.15rem 0.35rem;
+    font-size: inherit;
+    font-weight: 500;
+    color: inherit;
+    outline: none;
+    font-family: inherit;
+}
+
+.tree-rename-input:focus {
+    background: rgba(255, 255, 255, 0.15);
+}
+
 .tree-actions {
     display: flex;
     gap: 0.25rem;
