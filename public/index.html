@@ -24,28 +24,28 @@
             </div>
             <div class="toolbar">
                 <input type="file" id="file-input" accept="image/*" multiple style="display: none;">
-                <button id="upload-btn" title="Add Images"><i class="fas fa-images"></i></button>
-                <button id="new-folder-btn" title="New Folder"><i class="fas fa-folder-plus"></i></button>
-                <button id="new-canvas-btn" title="New Canvas"><i class="fas fa-plus"></i></button>
+                <button id="upload-btn" title="Add Images"><i class="far fa-images"></i></button>
+                <button id="new-folder-btn" title="New Folder"><i class="far fa-folder"></i></button>
+                <button id="new-canvas-btn" title="New Canvas"><i class="far fa-square-plus"></i></button>
                 <div class="toolbar-separator"></div>
-                
+
                 <!-- Drawing Tools Section -->
                 <div class="drawing-tools">
                     <button id="tool-hand" class="tool-button active" title="Hand Tool (H)" data-tool="hand">
-                        <i class="fas fa-hand-paper"></i>
+                        <i class="far fa-hand"></i>
                     </button>
                     <button id="tool-rectangle" class="tool-button" title="Rectangle Tool (R)" data-tool="rectangle">
-                        <i class="fas fa-square"></i>
+                        <i class="far fa-square"></i>
                     </button>
                     <button id="tool-line" class="tool-button" title="Line Tool (L)" data-tool="line">
                         <i class="fas fa-minus"></i>
                     </button>
                     <button id="tool-freehand" class="tool-button" title="Freehand Tool (F)" data-tool="freehand">
-                        <i class="fas fa-pencil-alt"></i>
+                        <i class="far fa-pen-to-square"></i>
                     </button>
                 </div>
                 <div class="toolbar-separator"></div>
-                
+
                 <!-- Color Palette Section -->
                 <div class="color-palette">
                     <div id="current-color" class="current-color" title="Current Color"></div>
@@ -57,22 +57,22 @@
                     </div>
                 </div>
                 <div class="toolbar-separator"></div>
-                
-                <button id="undo-btn" title="Undo (Ctrl+Z)" disabled><i class="fas fa-undo"></i></button>
-                <button id="redo-btn" title="Redo (Ctrl+Shift+Z)" disabled><i class="fas fa-redo"></i></button>
+
+                <button id="undo-btn" title="Undo (Ctrl+Z)" disabled><i class="fas fa-rotate-left"></i></button>
+                <button id="redo-btn" title="Redo (Ctrl+Shift+Z)" disabled><i class="fas fa-rotate-right"></i></button>
                 <div class="toolbar-separator"></div>
-                <button id="save-btn" title="Save"><i class="fas fa-save"></i></button>
+                <button id="save-btn" title="Save"><i class="far fa-floppy-disk"></i></button>
                 <div class="toolbar-separator"></div>
-                <button id="export-png-btn" title="Export PNG"><i class="fas fa-image"></i></button>
-                <button id="export-json-btn" title="Export JSON"><i class="fas fa-file-code"></i></button>
+                <button id="export-png-btn" title="Export PNG"><i class="far fa-image"></i></button>
+                <button id="export-json-btn" title="Export JSON"><i class="far fa-file-code"></i></button>
                 <button id="import-json-btn" title="Import JSON"><i class="fas fa-file-import"></i></button>
-                <button id="export-opml-btn" title="Export Tree as OPML"><i class="fas fa-sitemap"></i></button>
-                <button id="import-opml-btn" title="Import OPML Tree"><i class="fas fa-project-diagram"></i></button>
+                <button id="export-opml-btn" title="Export Tree as OPML"><i class="fas fa-diagram-project"></i></button>
+                <button id="import-opml-btn" title="Import OPML Tree"><i class="fas fa-diagram-next"></i></button>
                 <div class="toolbar-separator"></div>
-                <button id="grid-btn" title="Toggle Grid (G)"><i class="fas fa-th"></i></button>
+                <button id="grid-btn" title="Toggle Grid (G)"><i class="fas fa-border-all"></i></button>
                 <button id="snap-btn" title="Toggle Snap (S)"><i class="fas fa-magnet"></i></button>
                 <div class="toolbar-separator"></div>
-                <button id="help-btn" title="Keyboard Shortcuts (?)"><i class="fas fa-keyboard"></i></button>
+                <button id="help-btn" title="Keyboard Shortcuts (?)"><i class="far fa-keyboard"></i></button>
             </div>
         </header>
         
