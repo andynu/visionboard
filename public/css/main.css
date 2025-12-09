@@ -1,3 +1,15 @@
+/* CSS Custom Properties */
+:root {
+    --toolbar-scale: 1;
+    --toolbar-btn-size: calc(28px * var(--toolbar-scale));
+    --toolbar-btn-font: calc(14px * var(--toolbar-scale));
+    --toolbar-padding: calc(4px * var(--toolbar-scale));
+    --toolbar-gap: calc(1px * var(--toolbar-scale));
+    --toolbar-separator-height: calc(16px * var(--toolbar-scale));
+    --toolbar-radius: calc(8px * var(--toolbar-scale));
+    --toolbar-btn-radius: calc(5px * var(--toolbar-scale));
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -152,11 +164,11 @@ body {
 .toolbar {
     display: flex;
     align-items: center;
-    gap: 1px;
-    padding: 4px 6px;
+    gap: var(--toolbar-gap);
+    padding: var(--toolbar-padding) calc(var(--toolbar-padding) * 1.5);
     background: #1c1c1e;
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
+    border-radius: var(--toolbar-radius);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.24), 0 0 1px rgba(255, 255, 255, 0.1) inset;
 }
 
@@ -164,16 +176,16 @@ body {
     background: transparent;
     color: #8e8e93;
     border: none;
-    padding: 6px;
-    border-radius: 5px;
+    padding: calc(var(--toolbar-padding) * 1.5);
+    border-radius: var(--toolbar-btn-radius);
     cursor: pointer;
-    font-size: 14px;
+    font-size: var(--toolbar-btn-font);
     transition: color 0.15s ease, background 0.15s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: var(--toolbar-btn-size);
+    height: var(--toolbar-btn-size);
     position: relative;
 }
 
@@ -201,34 +213,34 @@ body {
 
 .toolbar-separator {
     width: 1px;
-    height: 16px;
+    height: var(--toolbar-separator-height);
     background: rgba(255, 255, 255, 0.1);
-    margin: 0 4px;
+    margin: 0 var(--toolbar-padding);
 }
 
 /* Drawing Tools Styles */
 .drawing-tools {
     display: flex;
-    gap: 1px;
-    padding: 2px;
+    gap: var(--toolbar-gap);
+    padding: calc(var(--toolbar-padding) / 2);
     background: rgba(255, 255, 255, 0.04);
-    border-radius: 5px;
+    border-radius: var(--toolbar-btn-radius);
 }
 
 .tool-button {
     background: transparent;
     color: #8e8e93;
     border: none;
-    padding: 6px;
-    border-radius: 4px;
+    padding: calc(var(--toolbar-padding) * 1.5);
+    border-radius: calc(var(--toolbar-btn-radius) - 1px);
     cursor: pointer;
-    font-size: 14px;
+    font-size: var(--toolbar-btn-font);
     transition: color 0.15s ease, background 0.15s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: var(--toolbar-btn-size);
+    height: var(--toolbar-btn-size);
     position: relative;
 }
 
@@ -251,14 +263,14 @@ body {
 .color-palette {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 2px;
+    gap: calc(var(--toolbar-padding) * 1.5);
+    padding: calc(var(--toolbar-padding) / 2);
 }
 
 .current-color {
-    width: 28px;
-    height: 28px;
-    border-radius: 5px;
+    width: var(--toolbar-btn-size);
+    height: var(--toolbar-btn-size);
+    border-radius: var(--toolbar-btn-radius);
     border: 1px solid rgba(255, 255, 255, 0.15);
     background-color: #000000;
     cursor: pointer;
@@ -286,13 +298,13 @@ body {
 
 .color-swatches {
     display: flex;
-    gap: 3px;
+    gap: calc(var(--toolbar-padding) * 0.75);
 }
 
 .color-swatch {
-    width: 16px;
-    height: 16px;
-    border-radius: 3px;
+    width: calc(var(--toolbar-btn-size) * 0.57);
+    height: calc(var(--toolbar-btn-size) * 0.57);
+    border-radius: calc(var(--toolbar-btn-radius) * 0.6);
     border: 1px solid rgba(255, 255, 255, 0.1);
     cursor: pointer;
     transition: border-color 0.15s ease, transform 0.15s ease;

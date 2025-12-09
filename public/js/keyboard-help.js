@@ -32,6 +32,9 @@ const keyboardHelp = (function() {
             { keys: 'G', description: 'Toggle grid visibility' },
             { keys: 'S', description: 'Toggle snap to grid' },
         ]},
+        { category: 'Accessibility', items: [
+            { keys: 'Ctrl+Shift+=', description: 'Cycle toolbar scale (1x/1.5x/2x)' },
+        ]},
         { category: 'Selection', items: [
             { keys: 'Click', description: 'Select element' },
             { keys: 'Shift+Click', description: 'Add to selection' },
