@@ -202,6 +202,8 @@ function makeFolderInteractive(element, canvas, currentCanvas) {
                         }
 
                         sel.move(newX, newY);
+                        // Update selection rectangle during drag
+                        window.selectionAPI.updateSelectionRect(sel);
                     });
                 } else {
                     // Move single element
@@ -221,6 +223,8 @@ function makeFolderInteractive(element, canvas, currentCanvas) {
                     element.move(newX, newY);
                     // Update resize handles position
                     window.resizeAPI.updateResizeHandles(element, resizeHandles);
+                    // Update selection rectangle during drag
+                    window.selectionAPI.updateSelectionRect(element);
                 }
             }
         };
@@ -331,6 +335,8 @@ function makeElementInteractive(element, canvas, currentCanvas) {
                         }
 
                         sel.move(newX, newY);
+                        // Update selection rectangle during drag
+                        window.selectionAPI.updateSelectionRect(sel);
                     });
                 } else {
                     // Move single element
@@ -350,6 +356,8 @@ function makeElementInteractive(element, canvas, currentCanvas) {
                     element.move(newX, newY);
                     // Update resize handles position
                     window.resizeAPI.updateResizeHandles(element, resizeHandles);
+                    // Update selection rectangle during drag
+                    window.selectionAPI.updateSelectionRect(element);
                 }
             }
         };

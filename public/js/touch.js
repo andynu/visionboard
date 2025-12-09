@@ -169,16 +169,18 @@ function getElementAtTouch(touch) {
 function moveElementByDelta(element, deltaX, deltaY) {
     const currentPos = element.bbox();
     const canvasRect = document.getElementById('canvas').getBoundingClientRect();
-    
+
     // Convert screen delta to canvas delta
     const viewBox = canvas.viewbox();
     const scaleX = viewBox.width / canvasRect.width;
     const scaleY = viewBox.height / canvasRect.height;
-    
+
     const canvasDeltaX = deltaX * scaleX;
     const canvasDeltaY = deltaY * scaleY;
-    
+
     element.move(currentPos.x + canvasDeltaX, currentPos.y + canvasDeltaY);
+    // Update selection rectangle during drag
+    window.selectionAPI.updateSelectionRect(element);
 }
 
 function getTouchDistance(touch1, touch2) {

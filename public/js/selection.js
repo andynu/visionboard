@@ -131,6 +131,16 @@ function removeSelectionRect(element) {
     }
 }
 
+// Update selection rectangle position to match element
+function updateSelectionRect(element) {
+    const selectionRect = element._selectionRect;
+    if (selectionRect) {
+        const bbox = element.bbox();
+        selectionRect.move(bbox.x, bbox.y);
+        selectionRect.size(bbox.width, bbox.height);
+    }
+}
+
 // Apply selection styling to an element
 function applySelectionStyle(element, canvas) {
     toggleClass(element, 'selected', true);
@@ -245,5 +255,6 @@ window.selectionAPI = {
     isSelected,
     getSelectionCount,
     hideAllResizeHandles,
-    toggleResizeHandles
+    toggleResizeHandles,
+    updateSelectionRect
 };
