@@ -30,6 +30,8 @@ const keyboardHelp = (function() {
         ]},
         { category: 'Selection', items: [
             { keys: 'Click', description: 'Select element' },
+            { keys: 'Shift+Click', description: 'Add to selection' },
+            { keys: 'Ctrl+Click', description: 'Toggle selection' },
             { keys: 'Double-click folder', description: 'Navigate to folder canvas' },
         ]},
     ];

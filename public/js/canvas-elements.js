@@ -119,10 +119,10 @@ function makeFolderInteractive(element, canvas, currentCanvas) {
     // Create resize handles group
     const resizeHandles = window.resizeAPI.createResizeHandles(element, canvas);
 
-    // Click to select
+    // Click to select (with modifier key support)
     element.on('click', (event) => {
         event.stopPropagation();
-        selectElement(element);
+        selectElement(element, event);
     });
 
     // Double-click to navigate to folder canvas
@@ -134,8 +134,9 @@ function makeFolderInteractive(element, canvas, currentCanvas) {
         }
     });
 
-    // Make draggable
+    // Make draggable (supports multi-selection drag)
     let dragData = { offsetX: 0, offsetY: 0 };
+    let multiDragOffsets = new Map();
 
     element.mousedown((event) => {
         // Don't start dragging if we're clicking on a resize handle
@@ -165,6 +166,18 @@ function makeFolderInteractive(element, canvas, currentCanvas) {
         dragData.offsetX = svgPt.x - element.x();
         dragData.offsetY = svgPt.y - element.y();
 
+        // If this element is part of a multi-selection, calculate offsets for all selected elements
+        const selectedElements = window.selectionAPI.getSelectedElements();
+        multiDragOffsets.clear();
+        if (selectedElements.length > 1 && window.selectionAPI.isSelected(element)) {
+            selectedElements.forEach(sel => {
+                multiDragOffsets.set(sel, {
+                    offsetX: svgPt.x - sel.x(),
+                    offsetY: svgPt.y - sel.y()
+                });
+            });
+        }
+
         const mousemove = (e) => {
             if (isDragging) {
                 // Convert mouse position to SVG coordinates
@@ -172,20 +185,37 @@ function makeFolderInteractive(element, canvas, currentCanvas) {
                 pt.y = e.clientY;
                 const currentSvgPt = pt.matrixTransform(svg.getScreenCTM().inverse());
 
-                // Move element maintaining the original offset
-                element.move(
-                    currentSvgPt.x - dragData.offsetX,
-                    currentSvgPt.y - dragData.offsetY
-                );
-
-                // Update resize handles position
-                window.resizeAPI.updateResizeHandles(element, resizeHandles);
+                // Move all selected elements if multi-selection, otherwise just this one
+                if (multiDragOffsets.size > 1) {
+                    multiDragOffsets.forEach((offset, sel) => {
+                        sel.move(
+                            currentSvgPt.x - offset.offsetX,
+                            currentSvgPt.y - offset.offsetY
+                        );
+                    });
+                } else {
+                    // Move single element
+                    element.move(
+                        currentSvgPt.x - dragData.offsetX,
+                        currentSvgPt.y - dragData.offsetY
+                    );
+                    // Update resize handles position
+                    window.resizeAPI.updateResizeHandles(element, resizeHandles);
+                }
             }
         };
 
         const mouseup = () => {
             isDragging = false;
-            window.canvasCore.updateElementPosition(element);
+            // Update positions for all moved elements
+            if (multiDragOffsets.size > 1) {
+                multiDragOffsets.forEach((offset, sel) => {
+                    window.canvasCore.updateElementPosition(sel);
+                });
+            } else {
+                window.canvasCore.updateElementPosition(element);
+            }
+            multiDragOffsets.clear();
             document.removeEventListener('mousemove', mousemove);
             document.removeEventListener('mouseup', mouseup);
         };
@@ -207,14 +237,15 @@ function makeElementInteractive(element, canvas, currentCanvas) {
     // Create resize handles group
     const resizeHandles = window.resizeAPI.createResizeHandles(element, canvas);
 
-    // Click to select
+    // Click to select (with modifier key support)
     element.on('click', (event) => {
         event.stopPropagation();
-        selectElement(element);
+        selectElement(element, event);
     });
 
-    // Make draggable
+    // Make draggable (supports multi-selection drag)
     let dragData = { offsetX: 0, offsetY: 0 };
+    let multiDragOffsets = new Map();
 
     element.mousedown((event) => {
         // Don't start dragging if we're clicking on a resize handle
@@ -244,6 +275,18 @@ function makeElementInteractive(element, canvas, currentCanvas) {
         dragData.offsetX = svgPt.x - element.x();
         dragData.offsetY = svgPt.y - element.y();
 
+        // If this element is part of a multi-selection, calculate offsets for all selected elements
+        const selectedElements = window.selectionAPI.getSelectedElements();
+        multiDragOffsets.clear();
+        if (selectedElements.length > 1 && window.selectionAPI.isSelected(element)) {
+            selectedElements.forEach(sel => {
+                multiDragOffsets.set(sel, {
+                    offsetX: svgPt.x - sel.x(),
+                    offsetY: svgPt.y - sel.y()
+                });
+            });
+        }
+
         const mousemove = (e) => {
             if (isDragging) {
                 // Convert mouse position to SVG coordinates
@@ -251,20 +294,37 @@ function makeElementInteractive(element, canvas, currentCanvas) {
                 pt.y = e.clientY;
                 const currentSvgPt = pt.matrixTransform(svg.getScreenCTM().inverse());
 
-                // Move element maintaining the original offset
-                element.move(
-                    currentSvgPt.x - dragData.offsetX,
-                    currentSvgPt.y - dragData.offsetY
-                );
-
-                // Update resize handles position
-                window.resizeAPI.updateResizeHandles(element, resizeHandles);
+                // Move all selected elements if multi-selection, otherwise just this one
+                if (multiDragOffsets.size > 1) {
+                    multiDragOffsets.forEach((offset, sel) => {
+                        sel.move(
+                            currentSvgPt.x - offset.offsetX,
+                            currentSvgPt.y - offset.offsetY
+                        );
+                    });
+                } else {
+                    // Move single element
+                    element.move(
+                        currentSvgPt.x - dragData.offsetX,
+                        currentSvgPt.y - dragData.offsetY
+                    );
+                    // Update resize handles position
+                    window.resizeAPI.updateResizeHandles(element, resizeHandles);
+                }
             }
         };
 
         const mouseup = () => {
             isDragging = false;
-            window.canvasCore.updateElementPosition(element);
+            // Update positions for all moved elements
+            if (multiDragOffsets.size > 1) {
+                multiDragOffsets.forEach((offset, sel) => {
+                    window.canvasCore.updateElementPosition(sel);
+                });
+            } else {
+                window.canvasCore.updateElementPosition(element);
+            }
+            multiDragOffsets.clear();
             document.removeEventListener('mousemove', mousemove);
             document.removeEventListener('mouseup', mouseup);
         };
@@ -274,13 +334,24 @@ function makeElementInteractive(element, canvas, currentCanvas) {
     });
 }
 
-function selectElement(element) {
-    // Use shared selection API
-    window.selectionAPI.selectElement(element, window.canvas);
+function selectElement(element, event) {
+    // Use shared selection API with modifier key support
+    const options = {};
+    if (event && event.shiftKey) {
+        options.addToSelection = true;
+    }
+    if (event && (event.ctrlKey || event.metaKey)) {
+        options.toggleSelection = true;
+    }
+    window.selectionAPI.selectElement(element, window.canvas, options);
 }
 
 function getSelectedElement() {
     return window.selectionAPI.getSelectedElement();
+}
+
+function getSelectedElements() {
+    return window.selectionAPI.getSelectedElements();
 }
 
 function deselectElement() {
@@ -297,6 +368,7 @@ window.elementsAPI = {
     selectElement,
     deselectElement,
     getSelectedElement,
+    getSelectedElements,
     getIsDragging,
     setIsDragging
 };

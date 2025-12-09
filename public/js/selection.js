@@ -1,14 +1,31 @@
 // Shared selection functionality for canvas elements
-// Used by both canvas.js (mouse) and touch.js (touch)
+// Supports single and multi-selection
+// Used by canvas-elements.js (mouse) and touch.js (touch)
 
-let selectedElement = null;
+let selectedElements = new Set();
 
 function getSelectedElement() {
-    return selectedElement;
+    // Return first selected element for backward compatibility
+    return selectedElements.size > 0 ? Array.from(selectedElements)[0] : null;
+}
+
+function getSelectedElements() {
+    return Array.from(selectedElements);
 }
 
 function setSelectedElement(element) {
-    selectedElement = element;
+    clearSelection();
+    if (element) {
+        selectedElements.add(element);
+    }
+}
+
+function isSelected(element) {
+    return selectedElements.has(element);
+}
+
+function getSelectionCount() {
+    return selectedElements.size;
 }
 
 // Get handle IDs from an element (handles both SVG.js and DOM elements)
@@ -72,7 +89,6 @@ function hideAllResizeHandles() {
 
 // Update folder stroke width for selection state
 function updateFolderStroke(element, selected) {
-    // Check for elementData to determine if it's a folder
     let elementData = null;
     if (element.data) {
         elementData = element.data('elementData');
@@ -112,18 +128,8 @@ function removeSelectionRect(element) {
     }
 }
 
-// Main select function - used by both mouse and touch
-function selectElement(element, canvas, options = {}) {
-    // Deselect current element first
-    deselectElement();
-
-    // Hide all resize handles first
-    hideAllResizeHandles();
-
-    // Set the new selected element
-    selectedElement = element;
-
-    // Add selected class
+// Apply selection styling to an element
+function applySelectionStyle(element, canvas) {
     toggleClass(element, 'selected', true);
 
     // Create selection indicator for images
@@ -131,11 +137,56 @@ function selectElement(element, canvas, options = {}) {
         createSelectionRect(element, canvas);
     }
 
-    // Show resize handles
-    toggleResizeHandles(element, true);
+    // Show resize handles only for single selection
+    if (selectedElements.size === 1) {
+        toggleResizeHandles(element, true);
+    }
 
-    // Update folder styling
     updateFolderStroke(element, true);
+}
+
+// Remove selection styling from an element
+function removeSelectionStyle(element) {
+    toggleClass(element, 'selected', false);
+    removeSelectionRect(element);
+    toggleResizeHandles(element, false);
+    updateFolderStroke(element, false);
+}
+
+// Main select function - used by both mouse and touch
+// options.addToSelection: true to add to multi-selection (Shift+click)
+// options.toggleSelection: true to toggle element in selection (Ctrl+click)
+function selectElement(element, canvas, options = {}) {
+    if (options.addToSelection && selectedElements.size > 0) {
+        // Shift+click: Add to selection
+        if (!selectedElements.has(element)) {
+            selectedElements.add(element);
+            applySelectionStyle(element, canvas);
+            // Hide resize handles when multi-selecting
+            hideAllResizeHandles();
+        }
+    } else if (options.toggleSelection) {
+        // Ctrl+click: Toggle selection
+        if (selectedElements.has(element)) {
+            selectedElements.delete(element);
+            removeSelectionStyle(element);
+        } else {
+            selectedElements.add(element);
+            applySelectionStyle(element, canvas);
+        }
+        // Update resize handles visibility based on selection count
+        if (selectedElements.size === 1) {
+            const singleElement = Array.from(selectedElements)[0];
+            toggleResizeHandles(singleElement, true);
+        } else {
+            hideAllResizeHandles();
+        }
+    } else {
+        // Normal click: Replace selection
+        clearSelection();
+        selectedElements.add(element);
+        applySelectionStyle(element, canvas);
+    }
 
     // Haptic feedback for touch devices
     if (options.haptic && navigator.vibrate) {
@@ -143,32 +194,53 @@ function selectElement(element, canvas, options = {}) {
     }
 }
 
+// Clear all selections
+function clearSelection() {
+    selectedElements.forEach(element => {
+        removeSelectionStyle(element);
+    });
+    selectedElements.clear();
+    hideAllResizeHandles();
+}
+
 // Main deselect function - used by both mouse and touch
 function deselectElement() {
-    if (!selectedElement) return;
+    clearSelection();
+}
 
-    // Remove selected class
-    toggleClass(selectedElement, 'selected', false);
+// Deselect a specific element from multi-selection
+function deselectSpecificElement(element) {
+    if (selectedElements.has(element)) {
+        selectedElements.delete(element);
+        removeSelectionStyle(element);
+    }
+}
 
-    // Remove selection indicator for images
-    removeSelectionRect(selectedElement);
-
-    // Hide resize handles
-    toggleResizeHandles(selectedElement, false);
-
-    // Update folder styling
-    updateFolderStroke(selectedElement, false);
-
-    // Clear selected element
-    selectedElement = null;
+// Select multiple elements at once (e.g., from marquee selection)
+function selectElements(elements, canvas) {
+    clearSelection();
+    elements.forEach(element => {
+        selectedElements.add(element);
+        applySelectionStyle(element, canvas);
+    });
+    // Hide resize handles for multi-selection
+    if (selectedElements.size > 1) {
+        hideAllResizeHandles();
+    }
 }
 
 // Export functions for use by other modules
 window.selectionAPI = {
     selectElement,
+    selectElements,
     deselectElement,
+    deselectSpecificElement,
+    clearSelection,
     getSelectedElement,
+    getSelectedElements,
     setSelectedElement,
+    isSelected,
+    getSelectionCount,
     hideAllResizeHandles,
     toggleResizeHandles
 };

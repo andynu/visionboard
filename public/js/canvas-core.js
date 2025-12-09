@@ -502,38 +502,52 @@ async function addFolderFromDialog(name) {
 }
 
 function deleteSelectedElement() {
-    const selected = window.elementsAPI.getSelectedElement();
-    if (!selected) return;
+    // Support deleting multiple selected elements
+    const selectedElements = window.selectionAPI.getSelectedElements();
+    if (selectedElements.length === 0) return;
 
     // Record state before modification for undo
     if (window.undoRedoManager) {
         window.undoRedoManager.recordState();
     }
 
-    const elementData = selected.data('elementData');
-    if (elementData) {
-        // Remove resize handles first using the stored ID
-        const handlesId = selected.attr('data-resize-handles-id');
-        if (handlesId) {
-            const handlesGroup = document.getElementById(handlesId);
-            if (handlesGroup) {
-                handlesGroup.remove();
+    // Delete each selected element
+    selectedElements.forEach(selected => {
+        const elementData = selected.data('elementData');
+        if (elementData) {
+            // Remove resize handles first using the stored IDs
+            const handlesIds = selected.attr('data-resize-handles-ids');
+            if (handlesIds) {
+                handlesIds.split(',').forEach(id => {
+                    const handle = document.getElementById(id);
+                    if (handle) {
+                        handle.remove();
+                    }
+                });
             }
+
+            // Remove selection rect if it's an image
+            const selectionRect = selected.data('selectionRect');
+            if (selectionRect) {
+                selectionRect.remove();
+            }
+
+            // Remove from canvas data
+            currentCanvas.elements = currentCanvas.elements.filter(el => el.id !== elementData.id);
+
+            // Remove from canvas
+            selected.remove();
         }
+    });
 
-        // Remove from canvas data
-        currentCanvas.elements = currentCanvas.elements.filter(el => el.id !== elementData.id);
+    // Clear selection
+    window.selectionAPI.clearSelection();
 
-        // Remove from canvas
-        selected.remove();
-        window.elementsAPI.deselectElement();
+    // Show drop zone if canvas is now empty
+    showDropZoneIfNeeded();
 
-        // Show drop zone if canvas is now empty
-        showDropZoneIfNeeded();
-
-        // Trigger auto-save
-        scheduleAutoSave();
-    }
+    // Trigger auto-save
+    scheduleAutoSave();
 }
 
 function hideDropZoneIfNeeded() {
