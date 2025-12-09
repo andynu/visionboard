@@ -17,6 +17,26 @@ const DEFAULT_FILTERS = {
 };
 
 /**
+ * Filter panel configuration
+ */
+const FILTER_SLIDERS = [
+    { key: 'brightness', label: 'Brightness', min: 0, max: 200, default: 100, unit: '%' },
+    { key: 'contrast', label: 'Contrast', min: 0, max: 200, default: 100, unit: '%' },
+    { key: 'saturate', label: 'Saturation', min: 0, max: 200, default: 100, unit: '%' },
+    { key: 'grayscale', label: 'Grayscale', min: 0, max: 100, default: 0, unit: '%' },
+    { key: 'sepia', label: 'Sepia', min: 0, max: 100, default: 0, unit: '%' },
+    { key: 'blur', label: 'Blur', min: 0, max: 20, default: 0, unit: 'px', step: 0.5 },
+    { key: 'hueRotate', label: 'Hue Rotate', min: 0, max: 360, default: 0, unit: '°' },
+    { key: 'invert', label: 'Invert', min: 0, max: 100, default: 0, unit: '%' },
+    { key: 'opacity', label: 'Opacity', min: 0, max: 100, default: 100, unit: '%' }
+];
+
+// Filter panel state
+let filterPanelElement = null;
+let filterPanelTarget = null;
+let filterPanelOriginalFilters = null;
+
+/**
  * Build a CSS filter string from a filter object
  * @param {Object} filters - Filter values
  * @returns {string} CSS filter property value
@@ -237,6 +257,270 @@ function hasFilters(element) {
     return elementData && elementData.filters && Object.keys(elementData.filters).length > 0;
 }
 
+/**
+ * Create the filter panel DOM element
+ */
+function createFilterPanel() {
+    filterPanelElement = document.createElement('div');
+    filterPanelElement.id = 'filter-panel';
+    filterPanelElement.className = 'filter-panel';
+
+    const slidersHtml = FILTER_SLIDERS.map(slider => `
+        <div class="filter-slider-row">
+            <label class="filter-slider-label">
+                <span class="filter-slider-name">${slider.label}</span>
+                <span class="filter-slider-value" id="filter-value-${slider.key}">${slider.default}${slider.unit}</span>
+            </label>
+            <input type="range"
+                   id="filter-${slider.key}"
+                   class="filter-slider"
+                   data-filter="${slider.key}"
+                   min="${slider.min}"
+                   max="${slider.max}"
+                   value="${slider.default}"
+                   step="${slider.step || 1}">
+        </div>
+    `).join('');
+
+    filterPanelElement.innerHTML = `
+        <div class="modal-overlay" id="filter-panel-overlay"></div>
+        <div class="filter-panel-content">
+            <div class="filter-panel-header">
+                <h3>Adjust Filters</h3>
+                <button id="filter-panel-close" class="modal-close">&times;</button>
+            </div>
+            <div class="filter-panel-body">
+                <div class="filter-sliders">
+                    ${slidersHtml}
+                </div>
+            </div>
+            <div class="filter-panel-footer">
+                <button id="filter-reset-btn" class="modal-button filter-reset-btn">Reset All</button>
+                <div class="filter-panel-actions">
+                    <button id="filter-cancel-btn" class="modal-button modal-cancel">Cancel</button>
+                    <button id="filter-apply-btn" class="modal-button modal-ok">Apply</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(filterPanelElement);
+    attachFilterPanelListeners();
+}
+
+/**
+ * Attach event listeners for the filter panel
+ */
+function attachFilterPanelListeners() {
+    // Close button
+    document.getElementById('filter-panel-close').addEventListener('click', cancelFilterPanel);
+    document.getElementById('filter-panel-overlay').addEventListener('click', cancelFilterPanel);
+    document.getElementById('filter-cancel-btn').addEventListener('click', cancelFilterPanel);
+
+    // Apply button
+    document.getElementById('filter-apply-btn').addEventListener('click', applyFilterPanel);
+
+    // Reset button
+    document.getElementById('filter-reset-btn').addEventListener('click', resetFilterPanel);
+
+    // Slider inputs - live preview
+    document.querySelectorAll('.filter-slider').forEach(slider => {
+        slider.addEventListener('input', (e) => {
+            const filterKey = e.target.dataset.filter;
+            const value = parseFloat(e.target.value);
+            const config = FILTER_SLIDERS.find(s => s.key === filterKey);
+
+            // Update value display
+            const valueEl = document.getElementById(`filter-value-${filterKey}`);
+            if (valueEl && config) {
+                valueEl.textContent = `${value}${config.unit}`;
+            }
+
+            // Apply live preview (without recording undo)
+            if (filterPanelTarget) {
+                setFilters(filterPanelTarget, { [filterKey]: value }, false);
+            }
+        });
+    });
+
+    // Keyboard handling
+    document.addEventListener('keydown', handleFilterPanelKeyboard);
+}
+
+/**
+ * Handle keyboard events for filter panel
+ */
+function handleFilterPanelKeyboard(e) {
+    if (!filterPanelElement || !filterPanelElement.classList.contains('show')) {
+        return;
+    }
+
+    if (e.key === 'Escape') {
+        e.preventDefault();
+        cancelFilterPanel();
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        applyFilterPanel();
+    }
+}
+
+/**
+ * Show the filter panel for an element
+ * @param {Object} element - SVG.js image element to adjust
+ */
+function showFilterPanel(element) {
+    if (!element) return;
+
+    // Verify it's an image element
+    const elementData = element.data('elementData');
+    if (!elementData || elementData.type !== 'image') {
+        showNotification('Filters only work on images');
+        return;
+    }
+
+    if (!filterPanelElement) {
+        createFilterPanel();
+    }
+
+    // Store target and original filters for cancel
+    filterPanelTarget = element;
+    filterPanelOriginalFilters = { ...getFilters(element) };
+
+    // Update sliders to current values
+    const currentFilters = getFilters(element);
+    FILTER_SLIDERS.forEach(slider => {
+        const sliderEl = document.getElementById(`filter-${slider.key}`);
+        const valueEl = document.getElementById(`filter-value-${slider.key}`);
+        if (sliderEl && valueEl) {
+            const value = currentFilters[slider.key] !== undefined ? currentFilters[slider.key] : slider.default;
+            sliderEl.value = value;
+            valueEl.textContent = `${value}${slider.unit}`;
+        }
+    });
+
+    // Show panel
+    filterPanelElement.classList.add('show');
+}
+
+/**
+ * Hide the filter panel
+ */
+function hideFilterPanel() {
+    if (filterPanelElement) {
+        filterPanelElement.classList.remove('show');
+    }
+    filterPanelTarget = null;
+    filterPanelOriginalFilters = null;
+}
+
+/**
+ * Cancel filter changes and restore original values
+ */
+function cancelFilterPanel() {
+    if (filterPanelTarget && filterPanelOriginalFilters) {
+        // Restore original filters without recording undo
+        applyFilters(filterPanelTarget, filterPanelOriginalFilters);
+
+        // Also restore the element data
+        const elementData = filterPanelTarget.data('elementData');
+        if (elementData) {
+            if (Object.keys(filterPanelOriginalFilters).every(
+                k => filterPanelOriginalFilters[k] === DEFAULT_FILTERS[k]
+            )) {
+                delete elementData.filters;
+            } else {
+                elementData.filters = { ...filterPanelOriginalFilters };
+                // Clean up default values
+                Object.keys(DEFAULT_FILTERS).forEach(key => {
+                    if (elementData.filters[key] === DEFAULT_FILTERS[key]) {
+                        delete elementData.filters[key];
+                    }
+                });
+                if (Object.keys(elementData.filters).length === 0) {
+                    delete elementData.filters;
+                }
+            }
+            filterPanelTarget.data('elementData', elementData);
+        }
+    }
+    hideFilterPanel();
+}
+
+/**
+ * Apply filter changes (records undo and saves)
+ */
+function applyFilterPanel() {
+    if (filterPanelTarget) {
+        // Record undo for the overall change
+        if (window.undoRedoManager) {
+            window.undoRedoManager.recordState();
+        }
+
+        // Get current slider values
+        const newFilters = {};
+        FILTER_SLIDERS.forEach(slider => {
+            const sliderEl = document.getElementById(`filter-${slider.key}`);
+            if (sliderEl) {
+                newFilters[slider.key] = parseFloat(sliderEl.value);
+            }
+        });
+
+        // Update element data
+        const elementData = filterPanelTarget.data('elementData');
+        if (elementData) {
+            elementData.filters = { ...newFilters };
+
+            // Remove default values
+            Object.keys(DEFAULT_FILTERS).forEach(key => {
+                if (elementData.filters[key] === DEFAULT_FILTERS[key]) {
+                    delete elementData.filters[key];
+                }
+            });
+            if (Object.keys(elementData.filters).length === 0) {
+                delete elementData.filters;
+            }
+
+            filterPanelTarget.data('elementData', elementData);
+
+            // Update canvas data
+            const currentCanvas = window.canvasCore.getCurrentCanvas();
+            if (currentCanvas) {
+                const index = currentCanvas.elements.findIndex(el => el.id === elementData.id);
+                if (index !== -1) {
+                    currentCanvas.elements[index] = elementData;
+                }
+                window.canvasCore.scheduleAutoSave();
+            }
+        }
+
+        showNotification('Filters applied');
+    }
+    hideFilterPanel();
+}
+
+/**
+ * Reset all sliders to defaults
+ */
+function resetFilterPanel() {
+    FILTER_SLIDERS.forEach(slider => {
+        const sliderEl = document.getElementById(`filter-${slider.key}`);
+        const valueEl = document.getElementById(`filter-value-${slider.key}`);
+        if (sliderEl && valueEl) {
+            sliderEl.value = slider.default;
+            valueEl.textContent = `${slider.default}${slider.unit}`;
+        }
+    });
+
+    // Apply live preview
+    if (filterPanelTarget) {
+        const defaultFilters = {};
+        FILTER_SLIDERS.forEach(slider => {
+            defaultFilters[slider.key] = slider.default;
+        });
+        applyFilters(filterPanelTarget, defaultFilters);
+    }
+}
+
 // Export for use by other modules
 window.imageFilters = {
     DEFAULT_FILTERS,
@@ -247,5 +531,7 @@ window.imageFilters = {
     resetFilters,
     toggleFilter,
     applyLoadedFilters,
-    hasFilters
+    hasFilters,
+    showFilterPanel,
+    hideFilterPanel
 };

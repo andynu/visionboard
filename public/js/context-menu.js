@@ -130,6 +130,8 @@ function getImageMenuItems(selectedCount) {
         label: 'Filters',
         icon: 'fa-solid fa-sliders',
         submenu: [
+            { label: 'Adjust Filters...', action: 'filter-adjust', icon: 'fa-solid fa-sliders' },
+            { type: 'separator' },
             { label: 'Grayscale', action: 'filter-grayscale', icon: 'fa-solid fa-droplet', checked: isGrayscale },
             { label: 'Sepia', action: 'filter-sepia', icon: 'fa-solid fa-sun', checked: isSepia },
             { label: 'Invert', action: 'filter-invert', icon: 'fa-solid fa-circle-half-stroke', checked: isInvert },
@@ -438,6 +440,12 @@ function executeAction(action) {
             break;
 
         // Filter actions
+        case 'filter-adjust':
+            if (contextMenuTarget && window.imageFilters) {
+                window.imageFilters.showFilterPanel(contextMenuTarget);
+            }
+            break;
+
         case 'filter-grayscale':
             if (contextMenuTarget && window.imageFilters) {
                 window.imageFilters.toggleFilter(contextMenuTarget, 'grayscale');
