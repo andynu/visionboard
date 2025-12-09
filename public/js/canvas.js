@@ -2,8 +2,8 @@ let canvas = null;
 let currentCanvas = null;
 let isDragging = false;
 let isResizing = false;
-let selectedElement = null;
 let autoSaveTimeout = null;
+// selectedElement is managed by selectionAPI (selection.js)
 let isPanning = false;
 let panStart = { x: 0, y: 0 };
 let viewBoxStart = { x: 0, y: 0, width: 0, height: 0 };
@@ -33,7 +33,7 @@ function initializeCanvas() {
             target.classList.contains('resize-handle')
         );
         
-        if (selectedElement && !isPanning && !isCanvasElement) {
+        if (getSelectedElement() && !isPanning && !isCanvasElement) {
             deselectElement();
         }
     });
@@ -421,97 +421,19 @@ function makeElementInteractive(element) {
 }
 
 function selectElement(element) {
-    deselectElement();
+    // Use shared selection API
+    window.selectionAPI.selectElement(element, canvas);
+}
 
-    // First hide ALL resize handles to prevent multiple visible handles
-    const allHandles = document.querySelectorAll('[id*="handles-"]');
-    allHandles.forEach(handlesGroup => {
-        handlesGroup.style.setProperty('opacity', '0', 'important');
-        handlesGroup.style.setProperty('pointer-events', 'none', 'important');
-        handlesGroup.classList.remove('visible');
-    });
-
-    selectedElement = element;
-
-    // Use DOM method for more reliable class management with SVG.js v2.7.1
-    const domElement = element.node;
-    if (domElement) {
-        domElement.classList.add('selected');
-
-        // Add visual selection indicator for images using an overlay rectangle
-        // (SVG <image> elements don't support stroke, so we create a rect overlay)
-        if (element.type === 'image') {
-            const bbox = element.bbox();
-            const selectionRect = canvas.rect(bbox.width, bbox.height)
-                .move(bbox.x, bbox.y)
-                .fill('none')
-                .stroke({ color: '#007AFF', width: 4 })
-                .attr('id', 'selection-indicator-' + element.attr('id'))
-                .attr('pointer-events', 'none'); // Don't interfere with clicks
-
-            // Store reference to remove later
-            element.data('selectionRect', selectionRect);
-        }
-    }
-    
-    // Show resize handles for selected element only
-    const handlesIds = element.attr('data-resize-handles-ids');
-    if (handlesIds) {
-        const ids = handlesIds.split(',');
-        ids.forEach((id) => {
-            const handle = document.getElementById(id);
-            if (handle) {
-                handle.style.setProperty('opacity', '1', 'important');
-                handle.style.setProperty('pointer-events', 'all', 'important');
-            }
-        });
-    }
-    
-    // Add selected styling for folders
-    if (element.data('elementData') && element.data('elementData').type === 'folder') {
-        element.find('rect').first().stroke({ width: 3 });
-    }
+// Get selected element from shared API
+function getSelectedElement() {
+    return window.selectionAPI.getSelectedElement();
 }
 
 function deselectElement() {
-    if (selectedElement) {
-        // Use DOM method for more reliable class management with SVG.js v2.7.1
-        const domElement = selectedElement.node;
-        if (domElement) {
-            domElement.classList.remove('selected');
-        }
-
-        // Remove visual selection indicator for images
-        if (selectedElement.type === 'image') {
-            const selectionRect = selectedElement.data('selectionRect');
-            if (selectionRect) {
-                selectionRect.remove();
-                selectedElement.data('selectionRect', null);
-            }
-        }
-
-        // Hide resize handles for the previously selected element
-        const handlesIds = selectedElement.attr('data-resize-handles-ids');
-        if (handlesIds) {
-            const ids = handlesIds.split(',');
-            ids.forEach(id => {
-                const handle = document.getElementById(id);
-                if (handle) {
-                    handle.style.setProperty('opacity', '0', 'important');
-                    handle.style.setProperty('pointer-events', 'none', 'important');
-                }
-            });
-        }
-
-        // Remove selected styling for folders
-        if (selectedElement.data('elementData') && selectedElement.data('elementData').type === 'folder') {
-            selectedElement.find('rect').first().stroke({ width: 2 });
-        }
-
-        selectedElement = null;
-    }
+    // Use shared selection API
+    window.selectionAPI.deselectElement();
 }
-
 
 function resizeElement(element, handleIndex, handle) {
     // Simplified resize logic - in a full implementation, 
@@ -696,36 +618,36 @@ document.addEventListener('mousemove', (event) => {
 
 // Keyboard shortcuts
 document.addEventListener('keydown', (event) => {
-    if (event.key === 'Delete' && selectedElement) {
+    if (event.key === 'Delete' && getSelectedElement()) {
         deleteSelectedElement();
     }
-    
 });
 
 function deleteSelectedElement() {
-    if (!selectedElement) return;
-    
-    const elementData = selectedElement.data('elementData');
+    const selected = getSelectedElement();
+    if (!selected) return;
+
+    const elementData = selected.data('elementData');
     if (elementData) {
         // Remove resize handles first using the stored ID
-        const handlesId = selectedElement.attr('data-resize-handles-id');
+        const handlesId = selected.attr('data-resize-handles-id');
         if (handlesId) {
             const handlesGroup = document.getElementById(handlesId);
             if (handlesGroup) {
                 handlesGroup.remove();
             }
         }
-        
+
         // Remove from canvas data
         currentCanvas.elements = currentCanvas.elements.filter(el => el.id !== elementData.id);
-        
+
         // Remove from canvas
-        selectedElement.remove();
-        selectedElement = null;
-        
+        selected.remove();
+        deselectElement(); // Clear selection
+
         // Show drop zone if canvas is now empty
         showDropZoneIfNeeded();
-        
+
         // Trigger auto-save
         scheduleAutoSave();
     }
@@ -1179,10 +1101,11 @@ window.autoSaveCanvas = saveCanvas;
 window.makeElementInteractive = makeElementInteractive;
 window.selectElement = selectElement;
 window.deselectElement = deselectElement;
+window.getSelectedElement = getSelectedElement;
 
-// Expose selectedElement for debugging and testing
+// Expose selectedElement for debugging and testing (delegates to selectionAPI)
 Object.defineProperty(window, 'selectedElement', {
-    get: () => selectedElement,
-    set: (value) => { selectedElement = value; },
+    get: () => window.selectionAPI.getSelectedElement(),
+    set: (value) => window.selectionAPI.setSelectedElement(value),
     configurable: true
 });

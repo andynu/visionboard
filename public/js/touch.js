@@ -73,10 +73,11 @@ function handleTouchMove(event) {
         
         if (distance > 10) { // Threshold for drag vs tap
             isPanning = true;
-            
-            if (selectedElement) {
+
+            const selected = getSelectedElement();
+            if (selected) {
                 // Move selected element
-                moveElementByDelta(selectedElement, deltaX, deltaY);
+                moveElementByDelta(selected, deltaX, deltaY);
                 touchStartPos = { x: touch.clientX, y: touch.clientY };
             }
         }
@@ -113,21 +114,22 @@ function handleTouchEnd(event) {
     }
     
     // Reset states
+    const selected = getSelectedElement();
+    if (selected && isPanning) {
+        updateElementPosition(selected);
+    }
+
     isPanning = false;
     isZooming = false;
-    
-    if (selectedElement && isPanning) {
-        updateElementPosition(selectedElement);
-    }
 }
 
 function handleSingleTap(touch) {
     const element = getElementAtTouch(touch);
-    
+
     if (element) {
-        selectElement(element);
+        selectElementWithHaptic(element);
     } else {
-        deselectElement();
+        deselectElementTouch();
     }
 }
 
@@ -214,89 +216,19 @@ function resetCanvasView() {
     canvas.viewbox(0, 0, 1920, 1080);
 }
 
-function deselectElement() {
-    if (selectedElement) {
-        // Handle both DOM elements and SVG.js elements
-        if (selectedElement.removeClass) {
-            selectedElement.removeClass('selected');
-        } else {
-            selectedElement.classList.remove('selected');
-        }
-        
-        // Hide resize handles for the previously selected element (updated for new handle system)
-        let handlesIds;
-        if (selectedElement.attr) {
-            handlesIds = selectedElement.attr('data-resize-handles-ids');
-        } else {
-            handlesIds = selectedElement.getAttribute('data-resize-handles-ids');
-        }
-
-        if (handlesIds) {
-            const ids = handlesIds.split(',');
-            ids.forEach(id => {
-                const handle = document.getElementById(id);
-                if (handle) {
-                    handle.style.setProperty('opacity', '0', 'important');
-                    handle.style.setProperty('pointer-events', 'none', 'important');
-                }
-            });
-        }
-        
-        // Remove selected styling for folders (only for SVG.js elements)
-        if (selectedElement.data && selectedElement.find) {
-            const elementData = selectedElement.data('elementData');
-            if (elementData && elementData.type === 'folder') {
-                selectedElement.find('rect').first().stroke({ width: 2 });
-            }
-        }
-        
-        selectedElement = null;
-    }
+// Touch uses shared selection API from selection.js with haptic feedback option
+function selectElementWithHaptic(element) {
+    window.selectionAPI.selectElement(element, window.canvas, { haptic: true });
 }
 
-// Improved element selection for touch
-function selectElement(element) {
-    deselectElement();
-    selectedElement = element;
+// Alias to shared API for touch deselection
+function deselectElementTouch() {
+    window.selectionAPI.deselectElement();
+}
 
-    // Handle both DOM elements and SVG.js elements
-    if (element.addClass) {
-        element.addClass('selected');
-    } else {
-        element.classList.add('selected');
-    }
-
-    // Show resize handles for selected element (updated for new handle system)
-    let handlesIds;
-    if (element.attr) {
-        handlesIds = element.attr('data-resize-handles-ids');
-    } else {
-        handlesIds = element.getAttribute('data-resize-handles-ids');
-    }
-
-    if (handlesIds) {
-        const ids = handlesIds.split(',');
-        ids.forEach((id) => {
-            const handle = document.getElementById(id);
-            if (handle) {
-                handle.style.setProperty('opacity', '1', 'important');
-                handle.style.setProperty('pointer-events', 'all', 'important');
-            }
-        });
-    }
-    
-    // Add selected styling for folders (only for SVG.js elements)
-    if (element.data && element.find) {
-        const elementData = element.data('elementData');
-        if (elementData && elementData.type === 'folder') {
-            element.find('rect').first().stroke({ width: 3 });
-        }
-    }
-    
-    // Provide haptic feedback on supported devices
-    if (navigator.vibrate) {
-        navigator.vibrate(50);
-    }
+// Helper to get selected element from shared API
+function getSelectedElement() {
+    return window.selectionAPI.getSelectedElement();
 }
 
 // Initialize touch support when DOM is ready
