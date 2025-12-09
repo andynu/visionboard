@@ -112,10 +112,10 @@ async function handleFiles(files, dropX = null, dropY = null) {
             let y = dropY !== null ? dropY : 100 + (i * 50);
 
             // Add to canvas (await since it's async now)
-            await addImageFromFile(fileInfo, x, y);
+            await window.canvasCore.addImageFromFile(fileInfo, x, y);
 
             // Hide drop zone after adding the first image
-            hideDropZoneIfNeeded();
+            window.canvasCore.hideDropZoneIfNeeded();
 
         } catch (error) {
             console.error(`Error uploading ${file.name}:`, error);
@@ -197,7 +197,7 @@ document.addEventListener('paste', async (event) => {
             if (file) {
                 try {
                     const fileInfo = await uploadFile(file);
-                    addImageFromFile(fileInfo, svgX, svgY);
+                    window.canvasCore.addImageFromFile(fileInfo, svgX, svgY);
                 } catch (error) {
                     console.error('Error uploading pasted image:', error);
                     alert('Failed to upload pasted image');
@@ -209,3 +209,6 @@ document.addEventListener('paste', async (event) => {
 
 // Expose handleFiles globally for Tauri file drop handler
 window.handleFiles = handleFiles;
+
+// Expose screenToCanvasCoordinates for touch.js
+window.screenToCanvasCoordinates = screenToCanvasCoordinates;

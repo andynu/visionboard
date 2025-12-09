@@ -85,7 +85,7 @@ async function loadTreeData() {
             }
             
             // Load the canvas and update UI
-            await loadCanvas(currentCanvasId);
+            await window.canvasCore.loadCanvas(currentCanvasId);
             renderTree();
             updateBreadcrumb();
         } else {
@@ -221,7 +221,7 @@ async function switchToCanvas(canvasId) {
 async function switchToCanvasInternal(canvasId, pushHistory = true) {
     try {
         currentCanvasId = canvasId;
-        await loadCanvas(canvasId);
+        await window.canvasCore.loadCanvas(canvasId);
         renderTree(); // Re-render to update active state
         updateBreadcrumb();
         

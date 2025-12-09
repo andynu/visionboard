@@ -50,7 +50,7 @@ function handleTouchStart(event) {
         // Check if touching an element
         const element = getElementAtTouch(touch);
         if (element) {
-            selectElement(element);
+            window.elementsAPI.selectElement(element);
         }
         
     } else if (touches.length === 2) {
@@ -116,7 +116,7 @@ function handleTouchEnd(event) {
     // Reset states
     const selected = getSelectedElement();
     if (selected && isPanning) {
-        updateElementPosition(selected);
+        window.canvasCore.updateElementPosition(selected);
     }
 
     isPanning = false;
@@ -138,7 +138,7 @@ function handleDoubleTap(touch) {
     
     if (element) {
         // Show resize handles on double-tap
-        showResizeHandles(element);
+        window.selectionAPI.toggleResizeHandles(element, true);
     } else {
         // Zoom to fit or reset zoom
         resetCanvasView();
@@ -147,7 +147,7 @@ function handleDoubleTap(touch) {
 
 function getElementAtTouch(touch) {
     // Convert touch coordinates to canvas coordinates
-    const canvasCoords = screenToCanvasCoordinates(touch.clientX, touch.clientY);
+    const canvasCoords = window.screenToCanvasCoordinates(touch.clientX, touch.clientY);
     
     // Find element at these coordinates
     // This is a simplified implementation - you might need more sophisticated hit testing
