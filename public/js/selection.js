@@ -111,7 +111,8 @@ function createSelectionRect(element, canvas) {
         .attr('id', 'selection-indicator-' + element.attr('id'))
         .attr('pointer-events', 'none');
 
-    element.data('selectionRect', selectionRect);
+    // Store reference directly on element (not via .data() which serializes to JSON)
+    element._selectionRect = selectionRect;
     return selectionRect;
 }
 
@@ -119,12 +120,10 @@ function createSelectionRect(element, canvas) {
 function removeSelectionRect(element) {
     if (element.type !== 'image') return;
 
-    const selectionRect = element.data ? element.data('selectionRect') : null;
+    const selectionRect = element._selectionRect;
     if (selectionRect) {
         selectionRect.remove();
-        if (element.data) {
-            element.data('selectionRect', null);
-        }
+        element._selectionRect = null;
     }
 }
 
