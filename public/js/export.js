@@ -115,23 +115,15 @@ async function exportCanvasToPNG() {
 
                     // Convert to PNG
                     canvas.toBlob(async (blob) => {
-                        if (isTauri && window.__TAURI__.dialog && window.__TAURI__.fs) {
-                            // Use Tauri's save dialog if available
+                        if (isTauri && window.__TAURI__.fs) {
+                            // Use Tauri's fs to write to Downloads folder
                             try {
-                                const filePath = await window.__TAURI__.dialog.save({
-                                    defaultPath: filename,
-                                    filters: [{
-                                        name: 'PNG Image',
-                                        extensions: ['png']
-                                    }]
-                                });
-
-                                if (filePath) {
-                                    const arrayBuffer = await blob.arrayBuffer();
-                                    const bytes = new Uint8Array(arrayBuffer);
-                                    await window.__TAURI__.fs.writeBinaryFile(filePath, bytes);
-                                    alert('Image exported successfully!');
-                                }
+                                const downloadDir = await window.__TAURI__.path.downloadDir();
+                                const filePath = downloadDir + filename;
+                                const arrayBuffer = await blob.arrayBuffer();
+                                const bytes = new Uint8Array(arrayBuffer);
+                                await window.__TAURI__.fs.writeBinaryFile(filePath, bytes);
+                                alert(`Image exported to:\n${filePath}`);
                             } catch (error) {
                                 console.error('Tauri save error:', error);
                                 // Fall back to browser download
@@ -311,21 +303,13 @@ async function exportCanvasToJSON() {
         const jsonString = JSON.stringify(exportData, null, 2);
         const filename = `vision-board-${getCurrentCanvasName()}.json`;
 
-        if (isTauri && window.__TAURI__.dialog && window.__TAURI__.fs) {
-            // Use Tauri's save dialog if available
+        if (isTauri && window.__TAURI__.fs) {
+            // Use Tauri's fs to write to Downloads folder
             try {
-                const filePath = await window.__TAURI__.dialog.save({
-                    defaultPath: filename,
-                    filters: [{
-                        name: 'JSON',
-                        extensions: ['json']
-                    }]
-                });
-
-                if (filePath) {
-                    await window.__TAURI__.fs.writeTextFile(filePath, jsonString);
-                    alert('Canvas exported successfully!');
-                }
+                const downloadDir = await window.__TAURI__.path.downloadDir();
+                const filePath = downloadDir + filename;
+                await window.__TAURI__.fs.writeTextFile(filePath, jsonString);
+                alert(`Canvas exported to:\n${filePath}`);
             } catch (error) {
                 console.error('Tauri save error:', error);
                 // Fall back to browser download

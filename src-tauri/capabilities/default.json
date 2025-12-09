@@ -19,6 +19,8 @@
     "fs:allow-create",
     "fs:allow-exists",
     "fs:scope-appdata",
-    "fs:scope-appdata-recursive"
+    "fs:scope-appdata-recursive",
+    "fs:allow-download-write",
+    "fs:scope-download"
   ]
 }
