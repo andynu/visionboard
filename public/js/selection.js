@@ -72,6 +72,10 @@ function toggleResizeHandles(element, show) {
             if (handle) {
                 handle.style.setProperty('opacity', show ? '1' : '0', 'important');
                 handle.style.setProperty('pointer-events', show ? 'all' : 'none', 'important');
+                // Move handles to front of SVG when shown to ensure they're not obscured
+                if (show && handle.parentNode) {
+                    handle.parentNode.appendChild(handle);
+                }
             }
         });
     }
