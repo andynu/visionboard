@@ -48,7 +48,13 @@ const keyboardHelp = (function() {
             { keys: 'Click', description: 'Select element' },
             { keys: 'Shift+Click', description: 'Add to selection' },
             { keys: 'Ctrl+Click', description: 'Toggle selection' },
+            { keys: 'Ctrl+A', description: 'Select all elements' },
+            { keys: 'Escape', description: 'Deselect all' },
             { keys: 'Double-click folder', description: 'Navigate to folder canvas' },
+        ]},
+        { category: 'Filters', items: [
+            { keys: 'Ctrl+Shift+G', description: 'Toggle grayscale' },
+            { keys: 'Alt+S', description: 'Toggle sepia' },
         ]},
     ];
 

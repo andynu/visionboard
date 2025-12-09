@@ -234,7 +234,7 @@ function getCanvasMenuItems() {
         { type: 'separator' },
         { label: 'Select All', action: 'select-all', icon: 'fa-solid fa-object-group', shortcut: 'Ctrl+A' },
         { type: 'separator' },
-        { label: 'Reset View', action: 'reset-view', icon: 'fa-solid fa-arrows-to-dot' }
+        { label: 'Zoom to Fit', action: 'reset-view', icon: 'fa-solid fa-arrows-to-dot', shortcut: 'Ctrl+0' }
     ];
 }
 
@@ -488,7 +488,11 @@ function executeAction(action) {
             break;
 
         case 'select-all':
-            selectAllElements();
+            if (window.keyboardShortcuts) {
+                window.keyboardShortcuts.selectAll();
+            } else {
+                selectAllElements();
+            }
             break;
 
         case 'reset-view':
