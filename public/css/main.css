@@ -2683,3 +2683,134 @@ body {
     color: #1c1c1e;
     font-size: 11px;
 }
+
+/* Ruler and Guides */
+.ruler-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 50;
+    display: none;
+}
+
+.ruler-container.visible {
+    display: block;
+}
+
+.ruler-corner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 20px;
+    height: 20px;
+    background: #2c2c2e;
+    z-index: 51;
+}
+
+.ruler {
+    position: absolute;
+    background: #2c2c2e;
+    pointer-events: auto;
+    cursor: crosshair;
+}
+
+.ruler-horizontal {
+    top: 0;
+    left: 20px;
+    right: 0;
+    height: 20px;
+}
+
+.ruler-vertical {
+    top: 20px;
+    left: 0;
+    bottom: 0;
+    width: 20px;
+}
+
+.ruler-marker {
+    position: absolute;
+    background: #818cf8;
+    pointer-events: none;
+    display: none;
+}
+
+.ruler-marker-h {
+    top: 0;
+    width: 1px;
+    height: 20px;
+}
+
+.ruler-marker-v {
+    left: 0;
+    width: 20px;
+    height: 1px;
+}
+
+.guides-container {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 49;
+    overflow: hidden;
+    display: none;
+}
+
+.guides-container.visible {
+    display: block;
+}
+
+.guide {
+    position: absolute;
+    pointer-events: auto;
+}
+
+.guide-x {
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #818cf8;
+    cursor: ns-resize;
+}
+
+.guide-x::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -3px;
+    height: 7px;
+    background: transparent;
+}
+
+.guide-y {
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: #818cf8;
+    cursor: ew-resize;
+}
+
+.guide-y::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -3px;
+    width: 7px;
+    background: transparent;
+}
+
+.guide.dragging {
+    background: #a5b4fc;
+}
+
+.guide:hover {
+    background: #a5b4fc;
+}

@@ -214,6 +214,44 @@ const gridSnap = (function() {
         let snappedX = x;
         let snappedY = y;
 
+        // First, check guide snapping (takes priority when visible)
+        if (window.rulerGuides && window.rulerGuides.isVisible()) {
+            const guideSnap = window.rulerGuides.snapToGuides(x, y, width, height, threshold);
+            if (guideSnap.x !== null) {
+                snappedX = guideSnap.x;
+            }
+            if (guideSnap.y !== null) {
+                snappedY = guideSnap.y;
+            }
+            // If snapped to guides, return early
+            if (guideSnap.x !== null || guideSnap.y !== null) {
+                // Still check grid for any unsnapped axis
+                if (guideSnap.x === null) {
+                    const tlGridX = Math.round(x / gridSize) * gridSize;
+                    const brGridX = Math.round((x + width) / gridSize) * gridSize;
+                    const distTLX = Math.abs(x - tlGridX);
+                    const distBRX = Math.abs((x + width) - brGridX);
+                    if (distTLX <= threshold && distTLX <= distBRX) {
+                        snappedX = tlGridX;
+                    } else if (distBRX <= threshold) {
+                        snappedX = brGridX - width;
+                    }
+                }
+                if (guideSnap.y === null) {
+                    const tlGridY = Math.round(y / gridSize) * gridSize;
+                    const brGridY = Math.round((y + height) / gridSize) * gridSize;
+                    const distTLY = Math.abs(y - tlGridY);
+                    const distBRY = Math.abs((y + height) - brGridY);
+                    if (distTLY <= threshold && distTLY <= distBRY) {
+                        snappedY = tlGridY;
+                    } else if (distBRY <= threshold) {
+                        snappedY = brGridY - height;
+                    }
+                }
+                return { x: snappedX, y: snappedY };
+            }
+        }
+
         // Calculate nearest grid points for corners
         const tlGridX = Math.round(x / gridSize) * gridSize;
         const tlGridY = Math.round(y / gridSize) * gridSize;

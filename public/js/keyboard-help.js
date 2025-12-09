@@ -40,6 +40,7 @@ const keyboardHelp = (function() {
             { keys: 'Ctrl+2', description: 'Zoom to selection' },
             { keys: 'G', description: 'Toggle grid visibility' },
             { keys: 'S', description: 'Toggle snap to grid' },
+            { keys: 'Ctrl+R', description: 'Toggle rulers and guides' },
             { keys: 'Shift+L', description: 'Toggle layers panel' },
         ]},
         { category: 'Accessibility', items: [
