@@ -29,6 +29,8 @@ const keyboardHelp = (function() {
             { keys: 'Mouse wheel', description: 'Zoom in/out' },
             { keys: 'Click + drag', description: 'Pan canvas' },
             { keys: 'Middle click + drag', description: 'Pan canvas (over elements)' },
+            { keys: 'G', description: 'Toggle grid visibility' },
+            { keys: 'S', description: 'Toggle snap to grid' },
         ]},
         { category: 'Selection', items: [
             { keys: 'Click', description: 'Select element' },

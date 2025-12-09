@@ -188,17 +188,37 @@ function makeFolderInteractive(element, canvas, currentCanvas) {
                 // Move all selected elements if multi-selection, otherwise just this one
                 if (multiDragOffsets.size > 1) {
                     multiDragOffsets.forEach((offset, sel) => {
-                        sel.move(
-                            currentSvgPt.x - offset.offsetX,
-                            currentSvgPt.y - offset.offsetY
-                        );
+                        let newX = currentSvgPt.x - offset.offsetX;
+                        let newY = currentSvgPt.y - offset.offsetY;
+
+                        // Apply snap if enabled
+                        if (window.gridSnap && window.gridSnap.isSnapEnabled()) {
+                            const elementData = sel.data('elementData');
+                            const width = elementData ? elementData.width : sel.width();
+                            const height = elementData ? elementData.height : sel.height();
+                            const snapped = window.gridSnap.snapElementPosition(newX, newY, width, height);
+                            newX = snapped.x;
+                            newY = snapped.y;
+                        }
+
+                        sel.move(newX, newY);
                     });
                 } else {
                     // Move single element
-                    element.move(
-                        currentSvgPt.x - dragData.offsetX,
-                        currentSvgPt.y - dragData.offsetY
-                    );
+                    let newX = currentSvgPt.x - dragData.offsetX;
+                    let newY = currentSvgPt.y - dragData.offsetY;
+
+                    // Apply snap if enabled
+                    if (window.gridSnap && window.gridSnap.isSnapEnabled()) {
+                        const elementData = element.data('elementData');
+                        const width = elementData ? elementData.width : element.width();
+                        const height = elementData ? elementData.height : element.height();
+                        const snapped = window.gridSnap.snapElementPosition(newX, newY, width, height);
+                        newX = snapped.x;
+                        newY = snapped.y;
+                    }
+
+                    element.move(newX, newY);
                     // Update resize handles position
                     window.resizeAPI.updateResizeHandles(element, resizeHandles);
                 }
@@ -297,17 +317,37 @@ function makeElementInteractive(element, canvas, currentCanvas) {
                 // Move all selected elements if multi-selection, otherwise just this one
                 if (multiDragOffsets.size > 1) {
                     multiDragOffsets.forEach((offset, sel) => {
-                        sel.move(
-                            currentSvgPt.x - offset.offsetX,
-                            currentSvgPt.y - offset.offsetY
-                        );
+                        let newX = currentSvgPt.x - offset.offsetX;
+                        let newY = currentSvgPt.y - offset.offsetY;
+
+                        // Apply snap if enabled
+                        if (window.gridSnap && window.gridSnap.isSnapEnabled()) {
+                            const elementData = sel.data('elementData');
+                            const width = elementData ? elementData.width : sel.width();
+                            const height = elementData ? elementData.height : sel.height();
+                            const snapped = window.gridSnap.snapElementPosition(newX, newY, width, height);
+                            newX = snapped.x;
+                            newY = snapped.y;
+                        }
+
+                        sel.move(newX, newY);
                     });
                 } else {
                     // Move single element
-                    element.move(
-                        currentSvgPt.x - dragData.offsetX,
-                        currentSvgPt.y - dragData.offsetY
-                    );
+                    let newX = currentSvgPt.x - dragData.offsetX;
+                    let newY = currentSvgPt.y - dragData.offsetY;
+
+                    // Apply snap if enabled
+                    if (window.gridSnap && window.gridSnap.isSnapEnabled()) {
+                        const elementData = element.data('elementData');
+                        const width = elementData ? elementData.width : element.width();
+                        const height = elementData ? elementData.height : element.height();
+                        const snapped = window.gridSnap.snapElementPosition(newX, newY, width, height);
+                        newX = snapped.x;
+                        newY = snapped.y;
+                    }
+
+                    element.move(newX, newY);
                     // Update resize handles position
                     window.resizeAPI.updateResizeHandles(element, resizeHandles);
                 }

@@ -52,6 +52,15 @@ const CONFIG = {
     strokeWidth: 4,
     color: '#007AFF',
   },
+
+  // Grid and snap settings
+  grid: {
+    size: 40,              // Grid spacing in pixels
+    snapThreshold: 8,      // Pixels within which snap activates
+    color: '#e0e0e0',
+    majorColor: '#c0c0c0',
+    majorInterval: 5       // Every 5th line is a major grid line
+  },
 };
 
 // Freeze to prevent accidental modification
@@ -63,6 +72,7 @@ Object.freeze(CONFIG.resizeHandle);
 Object.freeze(CONFIG.touch);
 Object.freeze(CONFIG.autosave);
 Object.freeze(CONFIG.selection);
+Object.freeze(CONFIG.grid);
 
 // Export for use in modules
 window.CONFIG = CONFIG;
