@@ -402,13 +402,19 @@ function executeAction(action) {
             }
             break;
 
-        // Layer actions (placeholders for future implementation)
+        // Layer actions
         case 'bring-to-front':
-            console.log('Bring to front - not yet implemented');
+            if (window.zOrder) {
+                const selectedElements = window.selectionAPI.getSelectedElements();
+                window.zOrder.bringToFront(selectedElements.length > 0 ? selectedElements : [contextMenuTarget]);
+            }
             break;
 
         case 'send-to-back':
-            console.log('Send to back - not yet implemented');
+            if (window.zOrder) {
+                const selectedElements = window.selectionAPI.getSelectedElements();
+                window.zOrder.sendToBack(selectedElements.length > 0 ? selectedElements : [contextMenuTarget]);
+            }
             break;
 
         // Transform actions (placeholders)

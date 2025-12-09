@@ -25,6 +25,12 @@ const keyboardHelp = (function() {
             { keys: 'Ctrl+D', description: 'Duplicate selection' },
             { keys: 'Delete', description: 'Delete selected elements' },
         ]},
+        { category: 'Arrange', items: [
+            { keys: 'Ctrl+]', description: 'Bring forward' },
+            { keys: 'Ctrl+Shift+]', description: 'Bring to front' },
+            { keys: 'Ctrl+[', description: 'Send backward' },
+            { keys: 'Ctrl+Shift+[', description: 'Send to back' },
+        ]},
         { category: 'Canvas', items: [
             { keys: 'Mouse wheel', description: 'Zoom in/out' },
             { keys: 'Click + drag', description: 'Pan canvas' },
