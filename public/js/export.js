@@ -11,17 +11,27 @@ function setupExportButton() {
     const exportBtn = document.getElementById('export-btn');
     const exportJsonBtn = document.getElementById('export-json-btn');
     const importJsonBtn = document.getElementById('import-json-btn');
-    
+    const exportOpmlBtn = document.getElementById('export-opml-btn');
+    const importOpmlBtn = document.getElementById('import-opml-btn');
+
     if (exportBtn) {
         exportBtn.addEventListener('click', exportCanvasToPNG);
     }
-    
+
     if (exportJsonBtn) {
         exportJsonBtn.addEventListener('click', exportCanvasToJSON);
     }
-    
+
     if (importJsonBtn) {
         importJsonBtn.addEventListener('click', importCanvasFromJSON);
+    }
+
+    if (exportOpmlBtn) {
+        exportOpmlBtn.addEventListener('click', exportTreeToOPML);
+    }
+
+    if (importOpmlBtn) {
+        importOpmlBtn.addEventListener('click', importTreeFromOPML);
     }
 }
 
@@ -458,10 +468,402 @@ function generateUniqueId() {
     return 'canvas-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 }
 
+// OPML Export - exports entire canvas tree hierarchy
+async function exportTreeToOPML() {
+    try {
+        // Get tree structure
+        const treeData = await window.treeAPI.get();
+
+        // Load all canvas data for export
+        const canvasDataMap = {};
+        for (const canvasId of Object.keys(treeData.canvases)) {
+            try {
+                const canvasData = await window.canvasAPI.get(canvasId);
+                canvasDataMap[canvasId] = canvasData;
+            } catch (error) {
+                console.warn(`Could not load canvas ${canvasId}:`, error);
+            }
+        }
+
+        // Build OPML structure
+        const opml = buildOPMLDocument(treeData, canvasDataMap);
+
+        // Download the file
+        const blob = new Blob([opml], { type: 'text/xml;charset=utf-8' });
+        const link = document.createElement('a');
+        link.download = `vision-board-tree-${new Date().toISOString().slice(0, 10)}.opml`;
+        link.href = URL.createObjectURL(blob);
+        link.click();
+        URL.revokeObjectURL(link.href);
+
+    } catch (error) {
+        console.error('OPML export error:', error);
+        alert('Failed to export tree as OPML: ' + error.message);
+    }
+}
+
+function buildOPMLDocument(treeData, canvasDataMap) {
+    const doc = document.implementation.createDocument(null, 'opml', null);
+    const opml = doc.documentElement;
+    opml.setAttribute('version', '2.0');
+
+    // Head section
+    const head = doc.createElement('head');
+    const title = doc.createElement('title');
+    title.textContent = 'Vision Board Canvas Tree';
+    head.appendChild(title);
+
+    const dateCreated = doc.createElement('dateCreated');
+    dateCreated.textContent = new Date().toUTCString();
+    head.appendChild(dateCreated);
+
+    const generator = doc.createElement('ownerName');
+    generator.textContent = 'Vision Board App';
+    head.appendChild(generator);
+
+    opml.appendChild(head);
+
+    // Body section
+    const body = doc.createElement('body');
+
+    // Recursively build outline for each root canvas
+    for (const rootId of treeData.rootCanvases) {
+        const outline = buildCanvasOutline(doc, rootId, treeData, canvasDataMap);
+        if (outline) {
+            body.appendChild(outline);
+        }
+    }
+
+    opml.appendChild(body);
+
+    // Serialize to string
+    const serializer = new XMLSerializer();
+    const xmlString = serializer.serializeToString(doc);
+
+    // Add XML declaration
+    return '<?xml version="1.0" encoding="UTF-8"?>\n' + xmlString;
+}
+
+function buildCanvasOutline(doc, canvasId, treeData, canvasDataMap) {
+    const treeNode = treeData.canvases[canvasId];
+    if (!treeNode) return null;
+
+    const canvasData = canvasDataMap[canvasId];
+    const outline = doc.createElement('outline');
+
+    // Basic attributes
+    outline.setAttribute('text', escapeXMLAttr(treeNode.name || canvasId));
+    outline.setAttribute('vb:canvasId', canvasId);
+    outline.setAttribute('type', 'canvas');
+
+    // Canvas metadata as attributes
+    if (canvasData) {
+        if (canvasData.viewBox) {
+            const vb = canvasData.viewBox;
+            const viewBoxStr = typeof vb === 'string' ? vb : `${vb.x || 0} ${vb.y || 0} ${vb.width || 1920} ${vb.height || 1080}`;
+            outline.setAttribute('vb:viewBox', viewBoxStr);
+        }
+        if (canvasData.created) {
+            outline.setAttribute('vb:created', canvasData.created);
+        }
+        if (canvasData.modified) {
+            outline.setAttribute('vb:modified', canvasData.modified);
+        }
+
+        // Add elements as child outlines
+        if (canvasData.elements && canvasData.elements.length > 0) {
+            for (const element of canvasData.elements) {
+                const elementOutline = buildElementOutline(doc, element);
+                outline.appendChild(elementOutline);
+            }
+        }
+    }
+
+    // Add child canvases (from tree structure)
+    if (treeNode.children && treeNode.children.length > 0) {
+        for (const childId of treeNode.children) {
+            const childOutline = buildCanvasOutline(doc, childId, treeData, canvasDataMap);
+            if (childOutline) {
+                outline.appendChild(childOutline);
+            }
+        }
+    }
+
+    return outline;
+}
+
+function buildElementOutline(doc, element) {
+    const outline = doc.createElement('outline');
+    outline.setAttribute('type', 'element');
+    outline.setAttribute('vb:elementType', element.type);
+    outline.setAttribute('vb:elementId', element.id);
+
+    // Position and size
+    outline.setAttribute('vb:x', String(element.x));
+    outline.setAttribute('vb:y', String(element.y));
+    outline.setAttribute('vb:width', String(element.width));
+    outline.setAttribute('vb:height', String(element.height));
+
+    if (element.rotation) {
+        outline.setAttribute('vb:rotation', String(element.rotation));
+    }
+    if (element.zIndex) {
+        outline.setAttribute('vb:zIndex', String(element.zIndex));
+    }
+
+    // Type-specific attributes
+    if (element.type === 'image') {
+        outline.setAttribute('text', 'Image');
+        // For images, we store the src - could be base64 or URL
+        if (element.src) {
+            if (element.src.startsWith('data:')) {
+                // Base64 data - store inline
+                outline.setAttribute('vb:src', element.src);
+            } else {
+                // URL reference - just store the path
+                outline.setAttribute('vb:src', element.src);
+            }
+        }
+    } else if (element.type === 'folder') {
+        outline.setAttribute('text', escapeXMLAttr(element.name || 'Folder'));
+        outline.setAttribute('vb:targetCanvasId', element.targetCanvasId || '');
+    } else if (element.type === 'rectangle' || element.type === 'line' || element.type === 'freehand') {
+        outline.setAttribute('text', element.type.charAt(0).toUpperCase() + element.type.slice(1));
+        if (element.stroke) outline.setAttribute('vb:stroke', element.stroke);
+        if (element.strokeWidth) outline.setAttribute('vb:strokeWidth', String(element.strokeWidth));
+        if (element.fill) outline.setAttribute('vb:fill', element.fill);
+        if (element.points) outline.setAttribute('vb:points', element.points);
+    } else {
+        outline.setAttribute('text', element.type || 'Unknown Element');
+    }
+
+    return outline;
+}
+
+function escapeXMLAttr(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+}
+
+// OPML Import - imports tree hierarchy from OPML file
+function importTreeFromOPML() {
+    try {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.opml,.xml,text/xml,application/xml';
+        input.style.display = 'none';
+
+        input.onchange = async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            try {
+                const text = await file.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/xml');
+
+                // Check for parsing errors
+                const parseError = doc.querySelector('parsererror');
+                if (parseError) {
+                    throw new Error('Invalid XML format: ' + parseError.textContent);
+                }
+
+                // Validate OPML structure
+                const opml = doc.documentElement;
+                if (opml.tagName.toLowerCase() !== 'opml') {
+                    throw new Error('Not a valid OPML file');
+                }
+
+                const body = opml.querySelector('body');
+                if (!body) {
+                    throw new Error('OPML file has no body section');
+                }
+
+                // Import the tree
+                await importOPMLTree(body);
+
+            } catch (error) {
+                console.error('OPML import error:', error);
+                alert('Failed to import OPML file: ' + error.message);
+            } finally {
+                document.body.removeChild(input);
+            }
+        };
+
+        document.body.appendChild(input);
+        input.click();
+
+    } catch (error) {
+        console.error('OPML import setup error:', error);
+        alert('Failed to setup OPML import: ' + error.message);
+    }
+}
+
+async function importOPMLTree(body) {
+    // Get existing tree to merge with
+    const existingTree = await window.treeAPI.get();
+
+    // Track new canvases and ID mappings
+    const idMapping = {}; // old ID -> new ID
+    const newCanvases = [];
+
+    // Process all top-level outlines
+    const topOutlines = body.querySelectorAll(':scope > outline');
+    for (const outline of topOutlines) {
+        await processOPMLOutline(outline, null, idMapping, newCanvases, existingTree);
+    }
+
+    // Update folder targetCanvasId references to use new IDs
+    for (const canvas of newCanvases) {
+        if (canvas.elements) {
+            for (const element of canvas.elements) {
+                if (element.type === 'folder' && element.targetCanvasId) {
+                    const newTargetId = idMapping[element.targetCanvasId];
+                    if (newTargetId) {
+                        element.targetCanvasId = newTargetId;
+                    }
+                }
+            }
+        }
+    }
+
+    // Save all new canvases
+    for (const canvas of newCanvases) {
+        await window.canvasAPI.update(canvas.id, canvas);
+    }
+
+    // Update tree structure
+    await window.treeAPI.update(existingTree);
+
+    // Refresh navigation
+    if (window.loadTreeData) {
+        await window.loadTreeData();
+    }
+
+    const count = newCanvases.length;
+    alert(`Successfully imported ${count} canvas${count !== 1 ? 'es' : ''} from OPML.`);
+}
+
+async function processOPMLOutline(outline, parentId, idMapping, newCanvases, treeData) {
+    const type = outline.getAttribute('type');
+    const text = outline.getAttribute('text') || 'Imported Canvas';
+
+    // Only process canvas-type outlines (skip element outlines)
+    if (type === 'element') {
+        return null;
+    }
+
+    // Generate new ID for this canvas
+    const oldId = outline.getAttribute('vb:canvasId');
+    const newId = generateUniqueId();
+    if (oldId) {
+        idMapping[oldId] = newId;
+    }
+
+    // Generate unique name
+    const uniqueName = await generateUniqueCanvasName(text);
+
+    // Extract canvas data
+    const viewBoxStr = outline.getAttribute('vb:viewBox') || '0 0 1920 1080';
+
+    // Parse elements from child outlines
+    const elements = [];
+    const childOutlines = outline.querySelectorAll(':scope > outline');
+    for (const child of childOutlines) {
+        const childType = child.getAttribute('type');
+        if (childType === 'element') {
+            const element = parseElementOutline(child);
+            if (element) {
+                // Generate new element ID
+                element.id = 'element-' + Math.random().toString(36).substr(2, 9);
+                elements.push(element);
+            }
+        }
+    }
+
+    // Create canvas object
+    const canvas = {
+        id: newId,
+        name: uniqueName,
+        parentId: parentId,
+        elements: elements,
+        viewBox: viewBoxStr,
+        created: outline.getAttribute('vb:created') || new Date().toISOString(),
+        modified: new Date().toISOString(),
+        version: '1.0.0'
+    };
+
+    newCanvases.push(canvas);
+
+    // Add to tree structure
+    treeData.canvases[newId] = {
+        name: uniqueName,
+        children: [],
+        parent: parentId
+    };
+
+    if (parentId && treeData.canvases[parentId]) {
+        treeData.canvases[parentId].children.push(newId);
+    } else {
+        treeData.rootCanvases.push(newId);
+    }
+
+    // Process child canvas outlines recursively
+    for (const child of childOutlines) {
+        const childType = child.getAttribute('type');
+        if (childType !== 'element') {
+            await processOPMLOutline(child, newId, idMapping, newCanvases, treeData);
+        }
+    }
+
+    return newId;
+}
+
+function parseElementOutline(outline) {
+    const elementType = outline.getAttribute('vb:elementType');
+    if (!elementType) return null;
+
+    const element = {
+        type: elementType,
+        x: parseFloat(outline.getAttribute('vb:x')) || 0,
+        y: parseFloat(outline.getAttribute('vb:y')) || 0,
+        width: parseFloat(outline.getAttribute('vb:width')) || 100,
+        height: parseFloat(outline.getAttribute('vb:height')) || 100,
+        rotation: parseFloat(outline.getAttribute('vb:rotation')) || 0,
+        zIndex: parseInt(outline.getAttribute('vb:zIndex')) || 1
+    };
+
+    // Type-specific attributes
+    if (elementType === 'image') {
+        element.src = outline.getAttribute('vb:src') || '';
+    } else if (elementType === 'folder') {
+        element.name = outline.getAttribute('text') || 'Folder';
+        element.targetCanvasId = outline.getAttribute('vb:targetCanvasId') || '';
+    } else if (elementType === 'rectangle' || elementType === 'line' || elementType === 'freehand') {
+        element.stroke = outline.getAttribute('vb:stroke') || '#000000';
+        element.strokeWidth = parseFloat(outline.getAttribute('vb:strokeWidth')) || 2;
+        if (outline.getAttribute('vb:fill')) {
+            element.fill = outline.getAttribute('vb:fill');
+        }
+        if (outline.getAttribute('vb:points')) {
+            element.points = outline.getAttribute('vb:points');
+        }
+    }
+
+    return element;
+}
+
 // Export functions for use by other modules
 window.exportCanvasToPNG = exportCanvasToPNG;
 window.exportCanvasToJSON = exportCanvasToJSON;
 window.importCanvasFromJSON = importCanvasFromJSON;
+window.exportTreeToOPML = exportTreeToOPML;
+window.importTreeFromOPML = importTreeFromOPML;
 window.generateUniqueId = generateUniqueId;
 window.generateUniqueCanvasName = generateUniqueCanvasName;
 window.validateImportData = validateImportData;
