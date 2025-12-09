@@ -1313,3 +1313,354 @@ body {
         transition: none;
     }
 }
+
+/* Export Dialog Styles */
+.export-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.export-dialog.show {
+    display: flex;
+}
+
+.export-modal-content {
+    width: 420px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.export-modal-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.export-preview-container {
+    text-align: center;
+}
+
+.export-preview {
+    width: 100%;
+    height: 120px;
+    background: #f0f0f0;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+
+.export-preview-placeholder {
+    color: #999;
+    font-size: 14px;
+}
+
+.export-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.export-dimensions {
+    font-size: 13px;
+    color: #666;
+    font-family: monospace;
+}
+
+.export-options {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.export-option-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.export-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.export-format-buttons,
+.export-size-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.export-format-btn,
+.export-size-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    background: white;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    color: #374151;
+}
+
+.export-format-btn:hover,
+.export-size-btn:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.export-format-btn.active,
+.export-size-btn.active {
+    background: #007AFF;
+    border-color: #007AFF;
+    color: white;
+}
+
+.export-slider {
+    width: 100%;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #e5e7eb;
+    border-radius: 3px;
+    outline: none;
+}
+
+.export-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #007AFF;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.export-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #007AFF;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.export-custom-size {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.export-size-input {
+    width: 80px;
+    padding: 8px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+    text-align: center;
+}
+
+.export-size-input:focus {
+    outline: none;
+    border-color: #007AFF;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.export-size-x {
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.export-size-unit {
+    color: #6b7280;
+    font-size: 12px;
+}
+
+.export-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #374151;
+    cursor: pointer;
+}
+
+.export-checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #007AFF;
+}
+
+.export-color-input {
+    width: 40px;
+    height: 28px;
+    padding: 2px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: auto;
+}
+
+.export-color-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.export-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 16px 20px;
+    background: rgba(255, 255, 255, 0.95);
+    border-top: 1px solid #e5e7eb;
+    border-radius: 0 0 12px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.export-progress-bar {
+    flex: 1;
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.export-progress-fill {
+    height: 100%;
+    background: #007AFF;
+    width: 0%;
+    animation: progress-indeterminate 1.5s ease-in-out infinite;
+}
+
+@keyframes progress-indeterminate {
+    0% {
+        width: 0%;
+        margin-left: 0%;
+    }
+    50% {
+        width: 50%;
+        margin-left: 25%;
+    }
+    100% {
+        width: 0%;
+        margin-left: 100%;
+    }
+}
+
+.export-progress-text {
+    font-size: 13px;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+/* Dark mode export dialog */
+@media (prefers-color-scheme: dark) {
+    .export-preview {
+        background: #2c2c2e;
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .export-preview-placeholder {
+        color: #8e8e93;
+    }
+
+    .export-dimensions {
+        color: #8e8e93;
+    }
+
+    .export-label {
+        color: #e5e5e7;
+    }
+
+    .export-format-btn,
+    .export-size-btn {
+        background: #2c2c2e;
+        border-color: rgba(255, 255, 255, 0.1);
+        color: #e5e5e7;
+    }
+
+    .export-format-btn:hover,
+    .export-size-btn:hover {
+        background: #3a3a3c;
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .export-format-btn.active,
+    .export-size-btn.active {
+        background: #0a84ff;
+        border-color: #0a84ff;
+    }
+
+    .export-slider {
+        background: #48484a;
+    }
+
+    .export-slider::-webkit-slider-thumb {
+        background: #0a84ff;
+    }
+
+    .export-slider::-moz-range-thumb {
+        background: #0a84ff;
+    }
+
+    .export-size-input {
+        background: #2c2c2e;
+        border-color: rgba(255, 255, 255, 0.1);
+        color: #e5e5e7;
+    }
+
+    .export-size-input:focus {
+        border-color: #0a84ff;
+        box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.2);
+    }
+
+    .export-size-x,
+    .export-size-unit {
+        color: #8e8e93;
+    }
+
+    .export-checkbox-label {
+        color: #e5e5e7;
+    }
+
+    .export-color-input {
+        background: #2c2c2e;
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .export-progress {
+        background: rgba(28, 28, 30, 0.95);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .export-progress-bar {
+        background: #48484a;
+    }
+
+    .export-progress-fill {
+        background: #0a84ff;
+    }
+
+    .export-progress-text {
+        color: #8e8e93;
+    }
+}

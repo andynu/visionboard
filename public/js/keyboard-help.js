@@ -60,6 +60,9 @@ const keyboardHelp = (function() {
             { keys: 'Ctrl+Shift+H', description: 'Flip horizontal' },
             { keys: 'Alt+V', description: 'Flip vertical' },
         ]},
+        { category: 'Export', items: [
+            { keys: 'Ctrl+Shift+E', description: 'Export as image...' },
+        ]},
     ];
 
     function createOverlay() {

@@ -234,7 +234,9 @@ function getCanvasMenuItems() {
         { type: 'separator' },
         { label: 'Select All', action: 'select-all', icon: 'fa-solid fa-object-group', shortcut: 'Ctrl+A' },
         { type: 'separator' },
-        { label: 'Zoom to Fit', action: 'reset-view', icon: 'fa-solid fa-arrows-to-dot', shortcut: 'Ctrl+0' }
+        { label: 'Zoom to Fit', action: 'reset-view', icon: 'fa-solid fa-arrows-to-dot', shortcut: 'Ctrl+0' },
+        { type: 'separator' },
+        { label: 'Export as Image...', action: 'export-image', icon: 'fa-regular fa-image', shortcut: 'Ctrl+Shift+E' }
     ];
 }
 
@@ -504,6 +506,12 @@ function executeAction(action) {
                 window.zoomControls.zoomToFitAll();
             } else {
                 resetCanvasView();
+            }
+            break;
+
+        case 'export-image':
+            if (window.showExportDialog) {
+                window.showExportDialog();
             }
             break;
 

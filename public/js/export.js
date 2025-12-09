@@ -3,19 +3,40 @@
 // Global tracking for imported canvas names during session
 let importedNamesThisSession = new Set();
 
+// Export dialog state
+let exportDialogElement = null;
+let exportSettings = {
+    format: 'png',
+    quality: 92,
+    sizeMode: 'current', // 'current', 'fit', 'custom'
+    customWidth: 1920,
+    customHeight: 1080,
+    includeBackground: true,
+    backgroundColor: '#ffffff'
+};
+
 function initializeExport() {
     setupExportButton();
+    createExportDialog();
+    attachExportKeyboardShortcut();
 }
 
 function setupExportButton() {
     const exportBtn = document.getElementById('export-btn');
+    const exportPngBtn = document.getElementById('export-png-btn');
     const exportJsonBtn = document.getElementById('export-json-btn');
     const importJsonBtn = document.getElementById('import-json-btn');
     const exportOpmlBtn = document.getElementById('export-opml-btn');
     const importOpmlBtn = document.getElementById('import-opml-btn');
 
+    // Old export button - show dialog
     if (exportBtn) {
-        exportBtn.addEventListener('click', exportCanvasToPNG);
+        exportBtn.addEventListener('click', showExportDialog);
+    }
+
+    // New PNG button - show dialog
+    if (exportPngBtn) {
+        exportPngBtn.addEventListener('click', showExportDialog);
     }
 
     if (exportJsonBtn) {
@@ -35,134 +56,579 @@ function setupExportButton() {
     }
 }
 
-async function exportCanvasToPNG() {
-    try {
-        const canvasElement = document.getElementById('canvas');
-        if (!canvasElement) {
-            alert('No canvas found to export');
-            return;
-        }
+/**
+ * Create the export dialog DOM element
+ */
+function createExportDialog() {
+    exportDialogElement = document.createElement('div');
+    exportDialogElement.id = 'export-dialog';
+    exportDialogElement.className = 'export-dialog';
+    exportDialogElement.innerHTML = `
+        <div class="modal-overlay" id="export-overlay"></div>
+        <div class="modal-content export-modal-content">
+            <div class="modal-header">
+                <h3>Export Canvas as Image</h3>
+                <button id="export-dialog-close" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body export-modal-body">
+                <div class="export-preview-container">
+                    <div id="export-preview" class="export-preview">
+                        <div class="export-preview-placeholder">Preview</div>
+                    </div>
+                    <div id="export-dimensions" class="export-dimensions">1920 × 1080</div>
+                </div>
 
-        // Get the SVG element
-        const svgElement = canvasElement.querySelector('svg');
-        if (!svgElement) {
-            alert('No content to export');
-            return;
-        }
+                <div class="export-options">
+                    <div class="export-option-group">
+                        <label class="export-label">Format</label>
+                        <div class="export-format-buttons">
+                            <button id="format-png" class="export-format-btn active" data-format="png">PNG</button>
+                            <button id="format-jpg" class="export-format-btn" data-format="jpg">JPG</button>
+                        </div>
+                    </div>
 
-        const isTauri = window.isTauriApp && window.isTauriApp();
+                    <div class="export-option-group" id="quality-group">
+                        <label class="export-label">Quality: <span id="quality-value">92</span>%</label>
+                        <input type="range" id="export-quality" min="10" max="100" value="92" class="export-slider">
+                    </div>
 
-        // Clone the SVG to avoid modifying the original
-        const svgClone = svgElement.cloneNode(true);
+                    <div class="export-option-group">
+                        <label class="export-label">Size</label>
+                        <div class="export-size-buttons">
+                            <button id="size-current" class="export-size-btn active" data-size="current">Current View</button>
+                            <button id="size-fit" class="export-size-btn" data-size="fit">Fit All Elements</button>
+                            <button id="size-custom" class="export-size-btn" data-size="custom">Custom</button>
+                        </div>
+                    </div>
 
-        // Get the viewBox or default dimensions
-        const viewBox = svgElement.getAttribute('viewBox');
-        let width, height;
+                    <div class="export-option-group" id="custom-size-group" style="display: none;">
+                        <div class="export-custom-size">
+                            <input type="number" id="export-width" value="1920" min="100" max="8192" class="export-size-input">
+                            <span class="export-size-x">×</span>
+                            <input type="number" id="export-height" value="1080" min="100" max="8192" class="export-size-input">
+                            <span class="export-size-unit">px</span>
+                        </div>
+                    </div>
 
-        if (viewBox) {
-            const [x, y, w, h] = viewBox.split(' ').map(Number);
-            width = w;
-            height = h;
-        } else {
-            width = svgElement.clientWidth || 1920;
-            height = svgElement.clientHeight || 1080;
-            svgClone.setAttribute('viewBox', `0 0 ${width} ${height}`);
-        }
+                    <div class="export-option-group">
+                        <label class="export-checkbox-label">
+                            <input type="checkbox" id="export-background" checked>
+                            <span>Include background</span>
+                        </label>
+                        <input type="color" id="export-bg-color" value="#ffffff" class="export-color-input">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="export-cancel" class="modal-button modal-cancel">Cancel</button>
+                <button id="export-save" class="modal-button modal-ok">Export</button>
+            </div>
+            <div id="export-progress" class="export-progress" style="display: none;">
+                <div class="export-progress-bar">
+                    <div class="export-progress-fill"></div>
+                </div>
+                <span class="export-progress-text">Exporting...</span>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(exportDialogElement);
 
-        // Set explicit dimensions for export
-        svgClone.setAttribute('width', width);
-        svgClone.setAttribute('height', height);
+    // Attach event listeners
+    attachExportDialogListeners();
+}
 
-        // Add white background if none exists
-        const existingRect = svgClone.querySelector('rect[fill="white"]');
-        if (!existingRect) {
-            const backgroundRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            backgroundRect.setAttribute('x', '0');
-            backgroundRect.setAttribute('y', '0');
-            backgroundRect.setAttribute('width', width);
-            backgroundRect.setAttribute('height', height);
-            backgroundRect.setAttribute('fill', 'white');
-            svgClone.insertBefore(backgroundRect, svgClone.firstChild);
-        }
+/**
+ * Attach event listeners for export dialog
+ */
+function attachExportDialogListeners() {
+    // Close button
+    document.getElementById('export-dialog-close').addEventListener('click', hideExportDialog);
+    document.getElementById('export-cancel').addEventListener('click', hideExportDialog);
+    document.getElementById('export-overlay').addEventListener('click', hideExportDialog);
 
-        // Convert external images to embedded data URLs (skip in Tauri - will fail)
-        if (!isTauri) {
-            await embedImagesInSVG(svgClone);
-        }
+    // Export button
+    document.getElementById('export-save').addEventListener('click', executeExport);
 
-        // Create a blob from the SVG
-        const svgData = new XMLSerializer().serializeToString(svgClone);
-        const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-        const svgUrl = URL.createObjectURL(svgBlob);
+    // Format buttons
+    document.querySelectorAll('.export-format-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.export-format-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            exportSettings.format = btn.dataset.format;
 
-        // Create an image element to convert SVG to PNG
-        const img = new Image();
-        const filename = `vision-board-${getCurrentCanvasName()}.png`;
-
-        return new Promise((resolve, reject) => {
-            img.onload = async () => {
-                try {
-                    // Create a canvas for conversion
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-
-                    // Set canvas dimensions
-                    canvas.width = width;
-                    canvas.height = height;
-
-                    // Draw the image onto the canvas
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    // Convert to PNG
-                    canvas.toBlob(async (blob) => {
-                        if (isTauri && window.__TAURI__.dialog) {
-                            // Use Tauri's save dialog
-                            try {
-                                const filePath = await window.__TAURI__.dialog.save({
-                                    defaultPath: filename,
-                                    filters: [{
-                                        name: 'PNG Image',
-                                        extensions: ['png']
-                                    }]
-                                });
-
-                                if (filePath) {
-                                    const arrayBuffer = await blob.arrayBuffer();
-                                    const bytes = new Uint8Array(arrayBuffer);
-                                    await window.__TAURI__.fs.writeBinaryFile(filePath, bytes);
-                                    // No alert needed - user picked the location via dialog
-                                }
-                            } catch (error) {
-                                console.error('Tauri save error:', error);
-                                // Fall back to browser download
-                                downloadBinaryFile(blob, filename, 'image/png');
-                            }
-                        } else {
-                            // Use browser download
-                            downloadBinaryFile(blob, filename, 'image/png');
-                        }
-
-                        // Clean up
-                        URL.revokeObjectURL(svgUrl);
-                        resolve();
-                    }, 'image/png');
-                } catch (error) {
-                    reject(error);
-                }
-            };
-
-            img.onerror = () => {
-                URL.revokeObjectURL(svgUrl);
-                reject(new Error('Failed to load SVG for conversion'));
-            };
-
-            img.src = svgUrl;
+            // Show/hide quality slider for JPG only
+            const qualityGroup = document.getElementById('quality-group');
+            if (exportSettings.format === 'jpg') {
+                qualityGroup.style.display = 'block';
+            } else {
+                qualityGroup.style.display = 'none';
+            }
         });
+    });
 
+    // Quality slider
+    document.getElementById('export-quality').addEventListener('input', (e) => {
+        exportSettings.quality = parseInt(e.target.value);
+        document.getElementById('quality-value').textContent = exportSettings.quality;
+    });
+
+    // Size buttons
+    document.querySelectorAll('.export-size-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.export-size-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            exportSettings.sizeMode = btn.dataset.size;
+
+            // Show/hide custom size inputs
+            const customGroup = document.getElementById('custom-size-group');
+            if (exportSettings.sizeMode === 'custom') {
+                customGroup.style.display = 'block';
+            } else {
+                customGroup.style.display = 'none';
+            }
+
+            updateExportPreview();
+        });
+    });
+
+    // Custom size inputs
+    document.getElementById('export-width').addEventListener('input', (e) => {
+        exportSettings.customWidth = parseInt(e.target.value) || 1920;
+        updateExportPreview();
+    });
+    document.getElementById('export-height').addEventListener('input', (e) => {
+        exportSettings.customHeight = parseInt(e.target.value) || 1080;
+        updateExportPreview();
+    });
+
+    // Background options
+    document.getElementById('export-background').addEventListener('change', (e) => {
+        exportSettings.includeBackground = e.target.checked;
+        document.getElementById('export-bg-color').disabled = !e.target.checked;
+    });
+    document.getElementById('export-bg-color').addEventListener('input', (e) => {
+        exportSettings.backgroundColor = e.target.value;
+    });
+
+    // Keyboard escape to close
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && exportDialogElement.classList.contains('show')) {
+            hideExportDialog();
+        }
+    });
+}
+
+/**
+ * Attach keyboard shortcut for export (Ctrl/Cmd+Shift+E)
+ */
+function attachExportKeyboardShortcut() {
+    document.addEventListener('keydown', (e) => {
+        // Don't capture when typing in inputs
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            return;
+        }
+
+        // Ctrl/Cmd + Shift + E: Show export dialog
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'e') {
+            e.preventDefault();
+            showExportDialog();
+        }
+    });
+}
+
+/**
+ * Show the export dialog
+ */
+function showExportDialog() {
+    if (!exportDialogElement) {
+        createExportDialog();
+    }
+
+    // Reset to defaults
+    exportSettings.format = 'png';
+    exportSettings.quality = 92;
+    exportSettings.sizeMode = 'current';
+    exportSettings.includeBackground = true;
+
+    // Update UI to match settings
+    document.querySelectorAll('.export-format-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.format === exportSettings.format);
+    });
+    document.getElementById('quality-group').style.display = exportSettings.format === 'jpg' ? 'block' : 'none';
+    document.getElementById('export-quality').value = exportSettings.quality;
+    document.getElementById('quality-value').textContent = exportSettings.quality;
+
+    document.querySelectorAll('.export-size-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.size === exportSettings.sizeMode);
+    });
+    document.getElementById('custom-size-group').style.display = 'none';
+
+    document.getElementById('export-background').checked = exportSettings.includeBackground;
+    document.getElementById('export-bg-color').value = exportSettings.backgroundColor;
+
+    // Update preview
+    updateExportPreview();
+
+    // Show dialog
+    exportDialogElement.classList.add('show');
+}
+
+/**
+ * Hide the export dialog
+ */
+function hideExportDialog() {
+    if (exportDialogElement) {
+        exportDialogElement.classList.remove('show');
+    }
+}
+
+/**
+ * Update the export preview with current dimensions
+ */
+function updateExportPreview() {
+    const dims = getExportDimensions();
+    document.getElementById('export-dimensions').textContent = `${dims.width} × ${dims.height} px`;
+}
+
+/**
+ * Calculate export dimensions based on current settings
+ */
+function getExportDimensions() {
+    const svgElement = document.querySelector('#canvas svg');
+    if (!svgElement) {
+        return { width: 1920, height: 1080 };
+    }
+
+    const viewBox = svgElement.getAttribute('viewBox');
+    let viewBoxValues = { x: 0, y: 0, width: 1920, height: 1080 };
+
+    if (viewBox) {
+        const parts = viewBox.split(' ').map(Number);
+        viewBoxValues = { x: parts[0], y: parts[1], width: parts[2], height: parts[3] };
+    }
+
+    switch (exportSettings.sizeMode) {
+        case 'current':
+            return { width: Math.round(viewBoxValues.width), height: Math.round(viewBoxValues.height) };
+
+        case 'fit':
+            const bounds = calculateElementsBounds(svgElement);
+            if (bounds) {
+                const padding = 50; // Add some padding
+                return {
+                    width: Math.round(bounds.width + padding * 2),
+                    height: Math.round(bounds.height + padding * 2)
+                };
+            }
+            return { width: Math.round(viewBoxValues.width), height: Math.round(viewBoxValues.height) };
+
+        case 'custom':
+            return { width: exportSettings.customWidth, height: exportSettings.customHeight };
+
+        default:
+            return { width: Math.round(viewBoxValues.width), height: Math.round(viewBoxValues.height) };
+    }
+}
+
+/**
+ * Calculate the bounding box of all canvas elements
+ */
+function calculateElementsBounds(svgElement) {
+    const elements = svgElement.querySelectorAll('.canvas-element');
+    if (elements.length === 0) return null;
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    elements.forEach(el => {
+        const bbox = el.getBBox();
+        minX = Math.min(minX, bbox.x);
+        minY = Math.min(minY, bbox.y);
+        maxX = Math.max(maxX, bbox.x + bbox.width);
+        maxY = Math.max(maxY, bbox.y + bbox.height);
+    });
+
+    return {
+        x: minX,
+        y: minY,
+        width: maxX - minX,
+        height: maxY - minY
+    };
+}
+
+/**
+ * Execute the export with current settings
+ */
+async function executeExport() {
+    const progressEl = document.getElementById('export-progress');
+    const saveBtn = document.getElementById('export-save');
+
+    try {
+        // Show progress
+        progressEl.style.display = 'flex';
+        saveBtn.disabled = true;
+
+        await exportCanvasToImage();
+
+        // Hide dialog on success
+        hideExportDialog();
+    } catch (error) {
+        console.error('Export error:', error);
+        alert('Failed to export canvas: ' + error.message);
+    } finally {
+        progressEl.style.display = 'none';
+        saveBtn.disabled = false;
+    }
+}
+
+/**
+ * Export canvas to image with configurable settings
+ * Uses exportSettings for format, quality, size, and background options
+ */
+async function exportCanvasToImage() {
+    const canvasElement = document.getElementById('canvas');
+    if (!canvasElement) {
+        throw new Error('No canvas found to export');
+    }
+
+    const svgElement = canvasElement.querySelector('svg');
+    if (!svgElement) {
+        throw new Error('No content to export');
+    }
+
+    const isTauri = window.isTauriApp && window.isTauriApp();
+
+    // Clone the SVG to avoid modifying the original
+    const svgClone = svgElement.cloneNode(true);
+
+    // Calculate dimensions based on export settings
+    const dims = getExportDimensions();
+    const { width, height } = dims;
+
+    // Get the viewBox to understand coordinate system
+    const viewBox = svgElement.getAttribute('viewBox');
+    let viewBoxX = 0, viewBoxY = 0, viewBoxWidth = width, viewBoxHeight = height;
+
+    if (viewBox) {
+        const parts = viewBox.split(' ').map(Number);
+        viewBoxX = parts[0];
+        viewBoxY = parts[1];
+        viewBoxWidth = parts[2];
+        viewBoxHeight = parts[3];
+    }
+
+    // Handle different size modes
+    if (exportSettings.sizeMode === 'fit') {
+        const bounds = calculateElementsBounds(svgElement);
+        if (bounds) {
+            const padding = 50;
+            // Update viewBox to fit all elements
+            svgClone.setAttribute('viewBox', `${bounds.x - padding} ${bounds.y - padding} ${bounds.width + padding * 2} ${bounds.height + padding * 2}`);
+        }
+    } else if (exportSettings.sizeMode === 'custom') {
+        // Keep current viewBox but scale to custom dimensions
+        svgClone.setAttribute('viewBox', `${viewBoxX} ${viewBoxY} ${viewBoxWidth} ${viewBoxHeight}`);
+    }
+
+    // Set explicit dimensions for export
+    svgClone.setAttribute('width', width);
+    svgClone.setAttribute('height', height);
+
+    // Handle background
+    if (exportSettings.includeBackground) {
+        // Remove any existing background rect first
+        const existingBg = svgClone.querySelector('.export-background-rect');
+        if (existingBg) {
+            existingBg.remove();
+        }
+
+        // Get the viewBox of the clone for proper background sizing
+        const cloneViewBox = svgClone.getAttribute('viewBox');
+        const vbParts = cloneViewBox ? cloneViewBox.split(' ').map(Number) : [0, 0, width, height];
+
+        const backgroundRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        backgroundRect.setAttribute('class', 'export-background-rect');
+        backgroundRect.setAttribute('x', vbParts[0]);
+        backgroundRect.setAttribute('y', vbParts[1]);
+        backgroundRect.setAttribute('width', vbParts[2]);
+        backgroundRect.setAttribute('height', vbParts[3]);
+        backgroundRect.setAttribute('fill', exportSettings.backgroundColor);
+        svgClone.insertBefore(backgroundRect, svgClone.firstChild);
+    }
+
+    // Remove selection handles and other UI elements from export
+    const uiElements = svgClone.querySelectorAll('.resize-handles, .selection-outline, .grid-pattern');
+    uiElements.forEach(el => el.remove());
+
+    // Convert external images to embedded data URLs
+    // In Tauri, images are served from local filesystem, need to embed them
+    await embedImagesInSVGForExport(svgClone);
+
+    // Create a blob from the SVG
+    const svgData = new XMLSerializer().serializeToString(svgClone);
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const svgUrl = URL.createObjectURL(svgBlob);
+
+    // Determine format and filename
+    const format = exportSettings.format;
+    const mimeType = format === 'jpg' ? 'image/jpeg' : 'image/png';
+    const extension = format === 'jpg' ? 'jpg' : 'png';
+    const filename = `vision-board-${getCurrentCanvasName()}.${extension}`;
+
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+
+        img.onload = async () => {
+            try {
+                // Create a canvas for conversion
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                // Handle high-DPI displays - use scale factor
+                const scale = window.devicePixelRatio || 1;
+                const scaledWidth = width * scale;
+                const scaledHeight = height * scale;
+
+                // Set canvas dimensions (for high-DPI)
+                canvas.width = scaledWidth;
+                canvas.height = scaledHeight;
+
+                // Scale context for high-DPI
+                ctx.scale(scale, scale);
+
+                // For JPG format, we need to fill with background color first (no transparency)
+                if (format === 'jpg') {
+                    ctx.fillStyle = exportSettings.includeBackground ? exportSettings.backgroundColor : '#ffffff';
+                    ctx.fillRect(0, 0, width, height);
+                }
+
+                // Draw the image onto the canvas
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Convert to image format
+                const quality = format === 'jpg' ? exportSettings.quality / 100 : undefined;
+
+                canvas.toBlob(async (blob) => {
+                    if (!blob) {
+                        reject(new Error('Failed to create image blob'));
+                        return;
+                    }
+
+                    if (isTauri && window.__TAURI__.dialog) {
+                        // Use Tauri's save dialog
+                        try {
+                            const filePath = await window.__TAURI__.dialog.save({
+                                defaultPath: filename,
+                                filters: [{
+                                    name: format === 'jpg' ? 'JPEG Image' : 'PNG Image',
+                                    extensions: [extension]
+                                }]
+                            });
+
+                            if (filePath) {
+                                const arrayBuffer = await blob.arrayBuffer();
+                                const bytes = new Uint8Array(arrayBuffer);
+                                await window.__TAURI__.fs.writeBinaryFile(filePath, bytes);
+                            }
+                        } catch (error) {
+                            console.error('Tauri save error:', error);
+                            // Fall back to browser download
+                            downloadBinaryFile(blob, filename, mimeType);
+                        }
+                    } else {
+                        // Use browser download
+                        downloadBinaryFile(blob, filename, mimeType);
+                    }
+
+                    // Clean up
+                    URL.revokeObjectURL(svgUrl);
+                    resolve();
+                }, mimeType, quality);
+            } catch (error) {
+                URL.revokeObjectURL(svgUrl);
+                reject(error);
+            }
+        };
+
+        img.onerror = () => {
+            URL.revokeObjectURL(svgUrl);
+            reject(new Error('Failed to load SVG for conversion'));
+        };
+
+        img.src = svgUrl;
+    });
+}
+
+/**
+ * Legacy function for quick PNG export without dialog
+ */
+async function exportCanvasToPNG() {
+    // Set defaults for quick export
+    exportSettings.format = 'png';
+    exportSettings.sizeMode = 'current';
+    exportSettings.includeBackground = true;
+    exportSettings.backgroundColor = '#ffffff';
+
+    try {
+        await exportCanvasToImage();
     } catch (error) {
         console.error('Export error:', error);
         alert('Failed to export canvas: ' + error.message);
     }
+}
+
+/**
+ * Embed images in SVG for export (handles both URLs and Tauri paths)
+ */
+async function embedImagesInSVGForExport(svgElement) {
+    const images = svgElement.querySelectorAll('image');
+    const promises = Array.from(images).map(async (img) => {
+        const href = img.getAttribute('href') || img.getAttribute('xlink:href');
+        if (href && !href.startsWith('data:')) {
+            try {
+                const dataUrl = await convertImageToDataUrl(href);
+                img.setAttribute('href', dataUrl);
+                img.removeAttribute('xlink:href');
+            } catch (error) {
+                console.warn('Failed to embed image:', href, error);
+            }
+        }
+    });
+
+    await Promise.all(promises);
+}
+
+/**
+ * Convert an image URL to a data URL
+ * Handles both web URLs and Tauri asset:// URLs
+ */
+function convertImageToDataUrl(url) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+
+            ctx.drawImage(img, 0, 0);
+
+            try {
+                const dataUrl = canvas.toDataURL('image/png');
+                resolve(dataUrl);
+            } catch (error) {
+                reject(error);
+            }
+        };
+
+        img.onerror = () => {
+            reject(new Error(`Failed to load image: ${url}`));
+        };
+
+        img.src = url;
+    });
 }
 
 async function embedImagesInSVG(svgElement) {
@@ -931,6 +1397,7 @@ function parseElementOutline(outline) {
 
 // Export functions for use by other modules
 window.exportCanvasToPNG = exportCanvasToPNG;
+window.exportCanvasToImage = exportCanvasToImage;
 window.exportCanvasToJSON = exportCanvasToJSON;
 window.importCanvasFromJSON = importCanvasFromJSON;
 window.exportTreeToOPML = exportTreeToOPML;
@@ -940,3 +1407,5 @@ window.generateUniqueCanvasName = generateUniqueCanvasName;
 window.validateImportData = validateImportData;
 window.createCanvasFromImport = createCanvasFromImport;
 window.initializeExport = initializeExport;
+window.showExportDialog = showExportDialog;
+window.hideExportDialog = hideExportDialog;
