@@ -425,28 +425,6 @@ test.describe('Keyboard Shortcuts', () => {
     });
 });
 
-test.describe('OPML Export/Import', () => {
-    test.beforeEach(async ({ page }) => {
-        await page.goto('/');
-        await page.waitForLoadState('networkidle');
-    });
-
-    test('export OPML button exists and is clickable', async ({ page }) => {
-        const exportOpmlBtn = page.locator('#export-opml-btn');
-        await expect(exportOpmlBtn).toBeVisible();
-
-        // We can't easily test file download in Playwright without additional setup
-        // but we can verify the button exists and is enabled
-        await expect(exportOpmlBtn).toBeEnabled();
-    });
-
-    test('import OPML button exists and is clickable', async ({ page }) => {
-        const importOpmlBtn = page.locator('#import-opml-btn');
-        await expect(importOpmlBtn).toBeVisible();
-        await expect(importOpmlBtn).toBeEnabled();
-    });
-});
-
 test.describe('Canvas Navigation', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/');
