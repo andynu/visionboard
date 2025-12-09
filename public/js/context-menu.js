@@ -269,20 +269,44 @@ function getGenericMenuItems(selectedCount) {
  */
 function getCanvasMenuItems() {
     const canGroup = window.grouping && window.grouping.canGroup();
+    const alignState = window.alignment ? window.alignment.getAlignmentState() : { canAlign: false, canDistribute: false };
 
-    return [
+    const items = [
         { label: 'Paste', action: 'paste', icon: 'fa-regular fa-paste', shortcut: 'Ctrl+V', disabled: !window.clipboardManager || !window.clipboardManager.hasContent() },
         { type: 'separator' },
         { label: 'Add Rectangle', action: 'add-rectangle', icon: 'fa-regular fa-square' },
         { label: 'Add Folder', action: 'add-folder', icon: 'fa-regular fa-folder' },
         { type: 'separator' },
         { label: 'Select All', action: 'select-all', icon: 'fa-solid fa-object-group', shortcut: 'Ctrl+A' },
-        { label: 'Group', action: 'group', icon: 'fa-solid fa-layer-group', shortcut: 'Ctrl+G', disabled: !canGroup },
-        { type: 'separator' },
-        { label: 'Zoom to Fit', action: 'reset-view', icon: 'fa-solid fa-arrows-to-dot', shortcut: 'Ctrl+0' },
-        { type: 'separator' },
-        { label: 'Export as Image...', action: 'export-image', icon: 'fa-regular fa-image', shortcut: 'Ctrl+Shift+E' }
+        { label: 'Group', action: 'group', icon: 'fa-solid fa-layer-group', shortcut: 'Ctrl+G', disabled: !canGroup }
     ];
+
+    // Add alignment submenu when multiple elements are selected
+    if (alignState.canAlign) {
+        items.push({
+            label: 'Align',
+            icon: 'fa-solid fa-align-left',
+            submenu: [
+                { label: 'Align Left', action: 'align-left', icon: 'fa-solid fa-align-left' },
+                { label: 'Align Center', action: 'align-center-h', icon: 'fa-solid fa-align-center' },
+                { label: 'Align Right', action: 'align-right', icon: 'fa-solid fa-align-right' },
+                { type: 'separator' },
+                { label: 'Align Top', action: 'align-top', icon: 'fa-solid fa-align-left fa-rotate-90' },
+                { label: 'Align Middle', action: 'align-middle', icon: 'fa-solid fa-align-center fa-rotate-90' },
+                { label: 'Align Bottom', action: 'align-bottom', icon: 'fa-solid fa-align-right fa-rotate-90' },
+                { type: 'separator' },
+                { label: 'Distribute Horizontally', action: 'distribute-h', icon: 'fa-solid fa-arrows-left-right', disabled: !alignState.canDistribute },
+                { label: 'Distribute Vertically', action: 'distribute-v', icon: 'fa-solid fa-arrows-up-down', disabled: !alignState.canDistribute }
+            ]
+        });
+    }
+
+    items.push({ type: 'separator' });
+    items.push({ label: 'Zoom to Fit', action: 'reset-view', icon: 'fa-solid fa-arrows-to-dot', shortcut: 'Ctrl+0' });
+    items.push({ type: 'separator' });
+    items.push({ label: 'Export as Image...', action: 'export-image', icon: 'fa-regular fa-image', shortcut: 'Ctrl+Shift+E' });
+
+    return items;
 }
 
 /**
@@ -577,6 +601,32 @@ function executeAction(action) {
             if (window.grouping) {
                 window.grouping.ungroupElement(contextMenuTarget);
             }
+            break;
+
+        // Alignment actions
+        case 'align-left':
+            if (window.alignment) window.alignment.alignLeft();
+            break;
+        case 'align-center-h':
+            if (window.alignment) window.alignment.alignCenterH();
+            break;
+        case 'align-right':
+            if (window.alignment) window.alignment.alignRight();
+            break;
+        case 'align-top':
+            if (window.alignment) window.alignment.alignTop();
+            break;
+        case 'align-middle':
+            if (window.alignment) window.alignment.alignMiddle();
+            break;
+        case 'align-bottom':
+            if (window.alignment) window.alignment.alignBottom();
+            break;
+        case 'distribute-h':
+            if (window.alignment) window.alignment.distributeHorizontally();
+            break;
+        case 'distribute-v':
+            if (window.alignment) window.alignment.distributeVertically();
             break;
 
         default:
