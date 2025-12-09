@@ -17,6 +17,60 @@ const DEFAULT_FILTERS = {
 };
 
 /**
+ * Filter presets for quick one-click effects
+ */
+const FILTER_PRESETS = [
+    {
+        id: 'bw',
+        name: 'Black & White',
+        icon: 'fa-adjust',
+        filters: { grayscale: 100 }
+    },
+    {
+        id: 'vintage',
+        name: 'Vintage',
+        icon: 'fa-film',
+        filters: { sepia: 40, contrast: 110, brightness: 95 }
+    },
+    {
+        id: 'high-contrast',
+        name: 'High Contrast',
+        icon: 'fa-circle-half-stroke',
+        filters: { contrast: 150, brightness: 105 }
+    },
+    {
+        id: 'faded',
+        name: 'Faded',
+        icon: 'fa-cloud',
+        filters: { contrast: 80, brightness: 110, saturate: 80 }
+    },
+    {
+        id: 'dramatic',
+        name: 'Dramatic',
+        icon: 'fa-bolt',
+        filters: { contrast: 130, brightness: 90, saturate: 120 }
+    },
+    {
+        id: 'muted',
+        name: 'Muted',
+        icon: 'fa-moon',
+        filters: { saturate: 50, brightness: 105 }
+    },
+    {
+        id: 'warm',
+        name: 'Warm',
+        icon: 'fa-sun',
+        filters: { sepia: 20, saturate: 110 }
+    },
+    {
+        id: 'cool',
+        name: 'Cool',
+        icon: 'fa-snowflake',
+        filters: { hueRotate: 180, saturate: 80 }
+    }
+];
+
+/**
  * Filter panel configuration
  */
 const FILTER_SLIDERS = [
@@ -258,6 +312,76 @@ function hasFilters(element) {
 }
 
 /**
+ * Get all available filter presets
+ * @returns {Array} Array of preset configurations
+ */
+function getPresets() {
+    return FILTER_PRESETS;
+}
+
+/**
+ * Apply a filter preset to an element
+ * @param {Object} element - SVG.js image element
+ * @param {string} presetId - The preset ID to apply
+ */
+function applyPreset(element, presetId) {
+    if (!element) return;
+
+    const preset = FILTER_PRESETS.find(p => p.id === presetId);
+    if (!preset) {
+        showNotification('Preset not found');
+        return;
+    }
+
+    // Verify it's an image element
+    const elementData = element.data('elementData');
+    if (!elementData || elementData.type !== 'image') {
+        showNotification('Presets only work on images');
+        return;
+    }
+
+    // Start with default filters and apply preset values
+    const newFilters = { ...DEFAULT_FILTERS, ...preset.filters };
+
+    // Use setFilters to apply with undo support
+    setFilters(element, newFilters, true);
+
+    showNotification(`${preset.name} applied`);
+}
+
+/**
+ * Apply a filter preset to all selected elements
+ * @param {string} presetId - The preset ID to apply
+ */
+function applyPresetToSelection(presetId) {
+    const selectedElements = window.selectionAPI?.getSelectedElements() || [];
+    const imageElements = selectedElements.filter(el => {
+        const data = el.data?.('elementData');
+        return data && data.type === 'image';
+    });
+
+    if (imageElements.length === 0) {
+        showNotification('Select image(s) first');
+        return;
+    }
+
+    // Record single undo state for all changes
+    if (window.undoRedoManager) {
+        window.undoRedoManager.recordState();
+    }
+
+    const preset = FILTER_PRESETS.find(p => p.id === presetId);
+    if (!preset) return;
+
+    imageElements.forEach(element => {
+        const newFilters = { ...DEFAULT_FILTERS, ...preset.filters };
+        setFilters(element, newFilters, false); // Don't record undo per element
+    });
+
+    showNotification(`${preset.name} applied to ${imageElements.length} image${imageElements.length > 1 ? 's' : ''}`);
+}
+
+/**
  * Create the filter panel DOM element
  */
 function createFilterPanel() {
@@ -282,6 +406,13 @@ function createFilterPanel() {
         </div>
     `).join('');
 
+    const presetsHtml = FILTER_PRESETS.map(preset => `
+        <button class="filter-preset-btn" data-preset="${preset.id}" title="${preset.name}">
+            <i class="fa-solid ${preset.icon}"></i>
+            <span>${preset.name}</span>
+        </button>
+    `).join('');
+
     filterPanelElement.innerHTML = `
         <div class="modal-overlay" id="filter-panel-overlay"></div>
         <div class="filter-panel-content">
@@ -290,8 +421,17 @@ function createFilterPanel() {
                 <button id="filter-panel-close" class="modal-close">&times;</button>
             </div>
             <div class="filter-panel-body">
-                <div class="filter-sliders">
-                    ${slidersHtml}
+                <div class="filter-presets-section">
+                    <div class="filter-section-label">Presets</div>
+                    <div class="filter-presets-grid">
+                        ${presetsHtml}
+                    </div>
+                </div>
+                <div class="filter-sliders-section">
+                    <div class="filter-section-label">Manual Adjustments</div>
+                    <div class="filter-sliders">
+                        ${slidersHtml}
+                    </div>
                 </div>
             </div>
             <div class="filter-panel-footer">
@@ -339,6 +479,32 @@ function attachFilterPanelListeners() {
             // Apply live preview (without recording undo)
             if (filterPanelTarget) {
                 setFilters(filterPanelTarget, { [filterKey]: value }, false);
+            }
+        });
+    });
+
+    // Preset buttons - apply preset and update sliders
+    document.querySelectorAll('.filter-preset-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const presetId = e.currentTarget.dataset.preset;
+            const preset = FILTER_PRESETS.find(p => p.id === presetId);
+            if (!preset) return;
+
+            // Apply preset filters to sliders and live preview
+            const newFilters = { ...DEFAULT_FILTERS, ...preset.filters };
+
+            // Update each slider
+            FILTER_SLIDERS.forEach(slider => {
+                const sliderEl = document.getElementById(`filter-${slider.key}`);
+                const valueEl = document.getElementById(`filter-value-${slider.key}`);
+                const value = newFilters[slider.key] !== undefined ? newFilters[slider.key] : slider.default;
+                if (sliderEl) sliderEl.value = value;
+                if (valueEl) valueEl.textContent = `${value}${slider.unit}`;
+            });
+
+            // Apply live preview
+            if (filterPanelTarget) {
+                applyFilters(filterPanelTarget, newFilters);
             }
         });
     });
@@ -524,6 +690,7 @@ function resetFilterPanel() {
 // Export for use by other modules
 window.imageFilters = {
     DEFAULT_FILTERS,
+    FILTER_PRESETS,
     buildFilterString,
     applyFilters,
     getFilters,
@@ -532,6 +699,9 @@ window.imageFilters = {
     toggleFilter,
     applyLoadedFilters,
     hasFilters,
+    getPresets,
+    applyPreset,
+    applyPresetToSelection,
     showFilterPanel,
     hideFilterPanel
 };

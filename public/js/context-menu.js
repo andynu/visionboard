@@ -151,12 +151,24 @@ function getImageMenuItems(selectedCount) {
     const isInvert = filters.invert && filters.invert > 0;
     const hasAnyFilter = window.imageFilters && window.imageFilters.hasFilters(contextMenuTarget);
 
+    // Build presets submenu items
+    const presets = window.imageFilters?.getPresets() || [];
+    const presetsSubmenu = presets.map(preset => ({
+        label: preset.name,
+        action: `filter-preset-${preset.id}`,
+        icon: `fa-solid ${preset.icon}`
+    }));
+    presetsSubmenu.push({ type: 'separator' });
+    presetsSubmenu.push({ label: 'Reset Filters', action: 'filter-reset', icon: 'fa-solid fa-rotate-left', disabled: !hasAnyFilter });
+
     // Filters submenu with checkmarks for active filters
     items.push({
         label: 'Filters',
         icon: 'fa-solid fa-sliders',
         submenu: [
             { label: 'Adjust Filters...', action: 'filter-adjust', icon: 'fa-solid fa-sliders' },
+            { type: 'separator' },
+            { label: 'Presets', icon: 'fa-solid fa-wand-magic-sparkles', submenu: presetsSubmenu },
             { type: 'separator' },
             { label: 'Grayscale', action: 'filter-grayscale', icon: 'fa-solid fa-droplet', checked: isGrayscale },
             { label: 'Sepia', action: 'filter-sepia', icon: 'fa-solid fa-sun', checked: isSepia },
@@ -638,7 +650,15 @@ function executeAction(action) {
             break;
 
         default:
-            console.log(`Unknown action: ${action}`);
+            // Handle filter preset actions (filter-preset-bw, filter-preset-vintage, etc.)
+            if (action.startsWith('filter-preset-')) {
+                const presetId = action.replace('filter-preset-', '');
+                if (contextMenuTarget && window.imageFilters) {
+                    window.imageFilters.applyPreset(contextMenuTarget, presetId);
+                }
+            } else {
+                console.log(`Unknown action: ${action}`);
+            }
     }
 }
 
