@@ -224,6 +224,13 @@ const clipboardManager = (function() {
         init();
     }
 
+    // Duplicate selected elements in place
+    function duplicateSelected() {
+        if (window.selectionAPI.getSelectionCount() === 0) return false;
+        copy();
+        return paste();
+    }
+
     // Public API
     return {
         copy,
@@ -232,6 +239,7 @@ const clipboardManager = (function() {
         hasContent,
         getCount,
         clear,
+        duplicateSelected,
         init
     };
 })();
