@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 const filesRouter = require('./routes/files');
 const treeRouter = require('./routes/tree');
 const { validateCanvasId, validateFilename, validateCanvasBody } = require('./middleware/validation');
+const { errorHandler, notFound, asyncHandler } = require('./middleware/error-handler');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -30,83 +31,71 @@ async function ensureStorageDirectories() {
   }
 }
 
-app.get('/api/canvas/:id', validateCanvasId, async (req, res) => {
+app.get('/api/canvas/:id', validateCanvasId, asyncHandler(async (req, res) => {
+  const canvasPath = path.join(CANVASES_DIR, `${req.params.id}.json`);
+  let data;
   try {
-    const canvasPath = path.join(CANVASES_DIR, `${req.params.id}.json`);
-    const data = await fs.readFile(canvasPath, 'utf8');
-    let canvas = JSON.parse(data);
-    
-    // Migration: Add version if missing
-    if (!canvas.version) {
-      canvas.version = '1.0.0';
-      canvas.modified = new Date().toISOString();
-      
-      // Save the migrated canvas
-      await fs.writeFile(canvasPath, JSON.stringify(canvas, null, 2));
-      console.log(`Migrated canvas ${canvas.id} to version 1.0.0`);
-    }
-    
-    res.json(canvas);
+    data = await fs.readFile(canvasPath, 'utf8');
   } catch (error) {
     if (error.code === 'ENOENT') {
-      res.status(404).json({ error: 'Canvas not found' });
-    } else {
-      res.status(500).json({ error: 'Failed to load canvas' });
+      throw notFound('Canvas not found');
     }
+    throw error;
   }
-});
+  let canvas = JSON.parse(data);
 
-app.post('/api/canvas', validateCanvasBody, async (req, res) => {
-  try {
-    const canvas = {
-      version: '1.0.0',
-      id: uuidv4(),
-      name: req.body.name || 'New Canvas',
-      parentId: req.body.parentId || null,
-      created: new Date().toISOString(),
-      modified: new Date().toISOString(),
-      viewBox: { x: 0, y: 0, width: 1920, height: 1080 },
-      elements: []
-    };
-
-    const canvasPath = path.join(CANVASES_DIR, `${canvas.id}.json`);
+  // Migration: Add version if missing
+  if (!canvas.version) {
+    canvas.version = '1.0.0';
+    canvas.modified = new Date().toISOString();
     await fs.writeFile(canvasPath, JSON.stringify(canvas, null, 2));
-    
-    res.json(canvas);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to create canvas' });
   }
-});
 
-app.put('/api/canvas/:id', validateCanvasId, validateCanvasBody, async (req, res) => {
-  try {
-    const canvasPath = path.join(CANVASES_DIR, `${req.params.id}.json`);
-    const canvas = {
-      ...req.body,
-      version: req.body.version || '1.0.0', // Ensure version is preserved or set
-      modified: new Date().toISOString()
-    };
-    
-    await fs.writeFile(canvasPath, JSON.stringify(canvas, null, 2));
-    res.json(canvas);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to update canvas' });
-  }
-});
+  res.json(canvas);
+}));
 
-app.delete('/api/canvas/:id', validateCanvasId, async (req, res) => {
+app.post('/api/canvas', validateCanvasBody, asyncHandler(async (req, res) => {
+  const canvas = {
+    version: '1.0.0',
+    id: uuidv4(),
+    name: req.body.name || 'New Canvas',
+    parentId: req.body.parentId || null,
+    created: new Date().toISOString(),
+    modified: new Date().toISOString(),
+    viewBox: { x: 0, y: 0, width: 1920, height: 1080 },
+    elements: []
+  };
+
+  const canvasPath = path.join(CANVASES_DIR, `${canvas.id}.json`);
+  await fs.writeFile(canvasPath, JSON.stringify(canvas, null, 2));
+
+  res.json(canvas);
+}));
+
+app.put('/api/canvas/:id', validateCanvasId, validateCanvasBody, asyncHandler(async (req, res) => {
+  const canvasPath = path.join(CANVASES_DIR, `${req.params.id}.json`);
+  const canvas = {
+    ...req.body,
+    version: req.body.version || '1.0.0', // Ensure version is preserved or set
+    modified: new Date().toISOString()
+  };
+
+  await fs.writeFile(canvasPath, JSON.stringify(canvas, null, 2));
+  res.json(canvas);
+}));
+
+app.delete('/api/canvas/:id', validateCanvasId, asyncHandler(async (req, res) => {
+  const canvasPath = path.join(CANVASES_DIR, `${req.params.id}.json`);
   try {
-    const canvasPath = path.join(CANVASES_DIR, `${req.params.id}.json`);
     await fs.unlink(canvasPath);
-    res.json({ success: true });
   } catch (error) {
     if (error.code === 'ENOENT') {
-      res.status(404).json({ error: 'Canvas not found' });
-    } else {
-      res.status(500).json({ error: 'Failed to delete canvas' });
+      throw notFound('Canvas not found');
     }
+    throw error;
   }
-});
+  res.json({ success: true });
+}));
 
 app.get('/api/images/:filename', validateFilename, (req, res) => {
   const imagePath = path.join(IMAGES_DIR, req.params.filename);
@@ -116,6 +105,9 @@ app.get('/api/images/:filename', validateFilename, (req, res) => {
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
+
+// Error handling middleware - must be registered after all routes
+app.use(errorHandler);
 
 async function writePidFile() {
   try {
