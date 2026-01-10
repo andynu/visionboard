@@ -190,45 +190,115 @@ function resizeElement(element, corner, deltaX, deltaY, startData) {
     let newHeight = startData.elementHeight;
 
     const minSize = CONFIG.element.minSize;
-
-    switch (corner) {
-        case 'nw':
-            newX = startData.elementX + deltaX;
-            newY = startData.elementY + deltaY;
-            newWidth = startData.elementWidth - deltaX;
-            newHeight = startData.elementHeight - deltaY;
-            break;
-        case 'ne':
-            newY = startData.elementY + deltaY;
-            newWidth = startData.elementWidth + deltaX;
-            newHeight = startData.elementHeight - deltaY;
-            break;
-        case 'sw':
-            newX = startData.elementX + deltaX;
-            newWidth = startData.elementWidth - deltaX;
-            newHeight = startData.elementHeight + deltaY;
-            break;
-        case 'se':
-            newWidth = startData.elementWidth + deltaX;
-            newHeight = startData.elementHeight + deltaY;
-            break;
-    }
-
-    // Enforce minimum size
-    if (newWidth < minSize) {
-        if (corner.includes('w')) newX = startData.elementX + startData.elementWidth - minSize;
-        newWidth = minSize;
-    }
-    if (newHeight < minSize) {
-        if (corner.includes('n')) newY = startData.elementY + startData.elementHeight - minSize;
-        newHeight = minSize;
-    }
-
-    // Apply the changes
-    element.move(newX, newY);
-
     const elementData = element.data('elementData');
-    if (elementData && elementData.type === 'folder') {
+    const isImage = !elementData || elementData.type !== 'folder';
+
+    // Calculate aspect ratio for images
+    const aspectRatio = startData.elementWidth / startData.elementHeight;
+
+    if (isImage) {
+        // For images, maintain aspect ratio using diagonal movement as scale factor
+        // Calculate scale based on the corner being dragged
+        let scale;
+
+        switch (corner) {
+            case 'nw':
+                // Dragging NW corner: negative delta means larger
+                // Use average of width and height change to determine scale
+                scale = 1 - (deltaX + deltaY) / (startData.elementWidth + startData.elementHeight);
+                break;
+            case 'ne':
+                // Dragging NE corner: positive deltaX and negative deltaY means larger
+                scale = 1 + (deltaX - deltaY) / (startData.elementWidth + startData.elementHeight);
+                break;
+            case 'sw':
+                // Dragging SW corner: negative deltaX and positive deltaY means larger
+                scale = 1 + (-deltaX + deltaY) / (startData.elementWidth + startData.elementHeight);
+                break;
+            case 'se':
+                // Dragging SE corner: positive delta means larger
+                scale = 1 + (deltaX + deltaY) / (startData.elementWidth + startData.elementHeight);
+                break;
+        }
+
+        // Apply scale to both dimensions
+        newWidth = startData.elementWidth * scale;
+        newHeight = startData.elementHeight * scale;
+
+        // Enforce minimum size while maintaining aspect ratio
+        if (newWidth < minSize || newHeight < minSize) {
+            if (aspectRatio > 1) {
+                // Wider than tall: constrain by height
+                newHeight = minSize;
+                newWidth = minSize * aspectRatio;
+            } else {
+                // Taller than wide: constrain by width
+                newWidth = minSize;
+                newHeight = minSize / aspectRatio;
+            }
+        }
+
+        // Calculate position based on corner being dragged
+        switch (corner) {
+            case 'nw':
+                // Anchor is SE corner
+                newX = startData.elementX + startData.elementWidth - newWidth;
+                newY = startData.elementY + startData.elementHeight - newHeight;
+                break;
+            case 'ne':
+                // Anchor is SW corner
+                newY = startData.elementY + startData.elementHeight - newHeight;
+                break;
+            case 'sw':
+                // Anchor is NE corner
+                newX = startData.elementX + startData.elementWidth - newWidth;
+                break;
+            case 'se':
+                // Anchor is NW corner - position stays the same
+                break;
+        }
+
+        // Apply changes for images
+        element.move(newX, newY);
+        element.size(newWidth, newHeight);
+    } else {
+        // For folders, allow free-form resizing (original behavior)
+        switch (corner) {
+            case 'nw':
+                newX = startData.elementX + deltaX;
+                newY = startData.elementY + deltaY;
+                newWidth = startData.elementWidth - deltaX;
+                newHeight = startData.elementHeight - deltaY;
+                break;
+            case 'ne':
+                newY = startData.elementY + deltaY;
+                newWidth = startData.elementWidth + deltaX;
+                newHeight = startData.elementHeight - deltaY;
+                break;
+            case 'sw':
+                newX = startData.elementX + deltaX;
+                newWidth = startData.elementWidth - deltaX;
+                newHeight = startData.elementHeight + deltaY;
+                break;
+            case 'se':
+                newWidth = startData.elementWidth + deltaX;
+                newHeight = startData.elementHeight + deltaY;
+                break;
+        }
+
+        // Enforce minimum size for folders
+        if (newWidth < minSize) {
+            if (corner.includes('w')) newX = startData.elementX + startData.elementWidth - minSize;
+            newWidth = minSize;
+        }
+        if (newHeight < minSize) {
+            if (corner.includes('n')) newY = startData.elementY + startData.elementHeight - minSize;
+            newHeight = minSize;
+        }
+
+        // Apply changes for folders
+        element.move(newX, newY);
+
         // For folders, manually resize components and update stored dimensions
         elementData.width = newWidth;
         elementData.height = newHeight;
@@ -254,9 +324,6 @@ function resizeElement(element, corner, deltaX, deltaY, startData) {
             const labelY = iconY + iconSize + 10;
             label.move(newWidth / 2, labelY);
         }
-    } else {
-        // For images, use the standard size method
-        element.size(newWidth, newHeight);
     }
 }
 
