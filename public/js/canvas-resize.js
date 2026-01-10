@@ -13,54 +13,32 @@ function setIsResizing(value) {
 
 function createResizeHandles(element, canvas) {
     const handleRadius = CONFIG.resizeHandle.radius;
+    const corners = ['nw', 'ne', 'sw', 'se'];
 
     // Create circles directly on canvas (not in a group)
-    const handles = {
-        nw: canvas.circle(handleRadius * 2)
-            .addClass('resize-handle nw-resize')
+    const handles = {};
+    corners.forEach(corner => {
+        handles[corner] = canvas.circle(handleRadius * 2)
+            .addClass(`resize-handle ${corner}-resize`)
             .fill('#ffffff')
             .stroke({ color: '#007AFF', width: 3 })
-            .attr('style', 'cursor: nw-resize'),
-        ne: canvas.circle(handleRadius * 2)
-            .addClass('resize-handle ne-resize')
-            .fill('#ffffff')
-            .stroke({ color: '#007AFF', width: 3 })
-            .attr('style', 'cursor: ne-resize'),
-        sw: canvas.circle(handleRadius * 2)
-            .addClass('resize-handle sw-resize')
-            .fill('#ffffff')
-            .stroke({ color: '#007AFF', width: 3 })
-            .attr('style', 'cursor: sw-resize'),
-        se: canvas.circle(handleRadius * 2)
-            .addClass('resize-handle se-resize')
-            .fill('#ffffff')
-            .stroke({ color: '#007AFF', width: 3 })
-            .attr('style', 'cursor: se-resize')
-    };
+            .attr('style', `cursor: ${corner}-resize`);
+    });
 
     // Store references in an array
-    const handlesArray = [handles.nw, handles.ne, handles.sw, handles.se];
+    const handlesArray = corners.map(corner => handles[corner]);
 
-    // Force visibility on each handle
-    Object.keys(handles).forEach(corner => {
+    // Force visibility, move to front, and add resize functionality for each handle
+    corners.forEach(corner => {
         const handle = handles[corner];
         handle.node.style.opacity = '1';
         handle.node.style.pointerEvents = 'all';
+        handle.front();
+        setupResizeHandle(handle, element, corner, canvas);
     });
 
     // Position handles initially
     updateResizeHandles(element, handlesArray);
-
-    // Move all handles to front of SVG
-    Object.keys(handles).forEach(corner => {
-        handles[corner].front();
-    });
-
-    // Add resize functionality to each handle
-    setupResizeHandle(handles.nw, element, 'nw', canvas);
-    setupResizeHandle(handles.ne, element, 'ne', canvas);
-    setupResizeHandle(handles.sw, element, 'sw', canvas);
-    setupResizeHandle(handles.se, element, 'se', canvas);
 
     // Store handles reference - save array of IDs
     const handlesIds = handlesArray.map(h => h.attr('id')).join(',');
