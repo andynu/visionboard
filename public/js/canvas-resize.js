@@ -94,12 +94,12 @@ function setupResizeHandle(handle, element, corner, canvas) {
 
         isResizing = true;
 
-        // Find the handles group by ID
-        const handlesId = element.attr('data-resize-handles-id');
-        const handlesGroup = document.getElementById(handlesId);
-        if (handlesGroup) {
-            handlesGroup.classList.add('dragging');
-        }
+        // Get individual handle elements by their IDs
+        const handlesIds = element.attr('data-resize-handles-ids');
+        const handles = handlesIds ? handlesIds.split(',').map(id => {
+            const node = document.getElementById(id);
+            return node ? SVG.adopt(node) : null;
+        }).filter(h => h) : [];
 
         // Get SVG point for accurate coordinate conversion
         const svg = canvas.node;
@@ -133,24 +133,19 @@ function setupResizeHandle(handle, element, corner, canvas) {
                 const deltaY = currentSvgPt.y - startData.mouseY;
 
                 resizeElement(element, corner, deltaX, deltaY, startData);
-                // Update resize handles position - get handles group by ID
-                const currentHandlesGroup = document.getElementById(handlesId);
-                if (currentHandlesGroup) {
-                    // Convert DOM element back to SVG.js element for updateResizeHandles
-                    const svgHandlesGroup = canvas.select(`#${handlesId}`).first();
-                    if (svgHandlesGroup) {
-                        updateResizeHandles(element, svgHandlesGroup);
-                    }
+
+                // Update resize handles and selection rect to track element
+                if (handles.length === 4) {
+                    updateResizeHandles(element, handles);
+                }
+                if (window.selectionAPI && window.selectionAPI.updateSelectionRect) {
+                    window.selectionAPI.updateSelectionRect(element);
                 }
             }
         };
 
         const mouseup = () => {
             isResizing = false;
-            // Remove dragging class from handles group
-            if (handlesGroup) {
-                handlesGroup.classList.remove('dragging');
-            }
             window.canvasCore.updateElementPosition(element);
             document.removeEventListener('mousemove', mousemove);
             document.removeEventListener('mouseup', mouseup);
