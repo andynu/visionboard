@@ -183,13 +183,16 @@ function setupResizeHandle(handle, element, corner, canvas) {
     });
 }
 
-// Corner coefficients for scale calculation
+// Corner coefficients for scale calculation and position anchoring
 // Each corner has different signs for how deltaX and deltaY affect scaling
+// Anchor coefficients determine position offset: [xCoeff, yCoeff]
+//   - 1 means: newPos = startPos + (startDim - newDim) for that axis
+//   - 0 means: newPos = startPos (no change)
 const CORNER_COEFFICIENTS = {
-    nw: [-1, -1],  // Dragging NW: negative delta means larger
-    ne: [1, -1],   // Dragging NE: positive deltaX, negative deltaY means larger
-    sw: [-1, 1],   // Dragging SW: negative deltaX, positive deltaY means larger
-    se: [1, 1]     // Dragging SE: positive delta means larger
+    nw: { scale: [-1, -1], anchor: [1, 1] },  // Anchors SE: both X and Y shift
+    ne: { scale: [1, -1], anchor: [0, 1] },   // Anchors SW: only Y shifts
+    sw: { scale: [-1, 1], anchor: [1, 0] },   // Anchors NE: only X shifts
+    se: { scale: [1, 1], anchor: [0, 0] }     // Anchors NW: no position change
 };
 
 function resizeElement(element, corner, deltaX, deltaY, startData) {
@@ -208,8 +211,8 @@ function resizeElement(element, corner, deltaX, deltaY, startData) {
     if (isImage) {
         // For images, maintain aspect ratio using diagonal movement as scale factor
         // Calculate scale based on the corner being dragged using coefficient table
-        const [coeffX, coeffY] = CORNER_COEFFICIENTS[corner];
-        const scale = 1 + (coeffX * deltaX + coeffY * deltaY) / (startData.elementWidth + startData.elementHeight);
+        const { scale: [scaleX, scaleY], anchor: [anchorX, anchorY] } = CORNER_COEFFICIENTS[corner];
+        const scale = 1 + (scaleX * deltaX + scaleY * deltaY) / (startData.elementWidth + startData.elementHeight);
 
         // Apply scale to both dimensions
         newWidth = startData.elementWidth * scale;
@@ -228,25 +231,10 @@ function resizeElement(element, corner, deltaX, deltaY, startData) {
             }
         }
 
-        // Calculate position based on corner being dragged
-        switch (corner) {
-            case 'nw':
-                // Anchor is SE corner
-                newX = startData.elementX + startData.elementWidth - newWidth;
-                newY = startData.elementY + startData.elementHeight - newHeight;
-                break;
-            case 'ne':
-                // Anchor is SW corner
-                newY = startData.elementY + startData.elementHeight - newHeight;
-                break;
-            case 'sw':
-                // Anchor is NE corner
-                newX = startData.elementX + startData.elementWidth - newWidth;
-                break;
-            case 'se':
-                // Anchor is NW corner - position stays the same
-                break;
-        }
+        // Calculate position using anchor coefficients
+        // Each coefficient determines if that axis needs adjustment based on size change
+        newX = startData.elementX + anchorX * (startData.elementWidth - newWidth);
+        newY = startData.elementY + anchorY * (startData.elementHeight - newHeight);
 
         // Apply changes for images
         element.move(newX, newY);
