@@ -183,6 +183,15 @@ function setupResizeHandle(handle, element, corner, canvas) {
     });
 }
 
+// Corner coefficients for scale calculation
+// Each corner has different signs for how deltaX and deltaY affect scaling
+const CORNER_COEFFICIENTS = {
+    nw: [-1, -1],  // Dragging NW: negative delta means larger
+    ne: [1, -1],   // Dragging NE: positive deltaX, negative deltaY means larger
+    sw: [-1, 1],   // Dragging SW: negative deltaX, positive deltaY means larger
+    se: [1, 1]     // Dragging SE: positive delta means larger
+};
+
 function resizeElement(element, corner, deltaX, deltaY, startData) {
     let newX = startData.elementX;
     let newY = startData.elementY;
@@ -198,28 +207,9 @@ function resizeElement(element, corner, deltaX, deltaY, startData) {
 
     if (isImage) {
         // For images, maintain aspect ratio using diagonal movement as scale factor
-        // Calculate scale based on the corner being dragged
-        let scale;
-
-        switch (corner) {
-            case 'nw':
-                // Dragging NW corner: negative delta means larger
-                // Use average of width and height change to determine scale
-                scale = 1 - (deltaX + deltaY) / (startData.elementWidth + startData.elementHeight);
-                break;
-            case 'ne':
-                // Dragging NE corner: positive deltaX and negative deltaY means larger
-                scale = 1 + (deltaX - deltaY) / (startData.elementWidth + startData.elementHeight);
-                break;
-            case 'sw':
-                // Dragging SW corner: negative deltaX and positive deltaY means larger
-                scale = 1 + (-deltaX + deltaY) / (startData.elementWidth + startData.elementHeight);
-                break;
-            case 'se':
-                // Dragging SE corner: positive delta means larger
-                scale = 1 + (deltaX + deltaY) / (startData.elementWidth + startData.elementHeight);
-                break;
-        }
+        // Calculate scale based on the corner being dragged using coefficient table
+        const [coeffX, coeffY] = CORNER_COEFFICIENTS[corner];
+        const scale = 1 + (coeffX * deltaX + coeffY * deltaY) / (startData.elementWidth + startData.elementHeight);
 
         // Apply scale to both dimensions
         newWidth = startData.elementWidth * scale;
