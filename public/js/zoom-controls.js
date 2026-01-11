@@ -37,65 +37,29 @@ function animateViewBox(canvas, targetViewBox, duration = 300) {
 
 /**
  * Calculate bounding box of all elements on canvas
+ * Uses consolidated bounds-utils module.
  * @returns {Object|null} {x, y, width, height} or null if no elements
  */
 function getAllElementsBounds() {
-    const canvas = window.canvasCore.getCanvas();
     const currentCanvas = window.canvasCore.getCurrentCanvas();
 
-    if (!canvas || !currentCanvas || !currentCanvas.elements || currentCanvas.elements.length === 0) {
+    if (!currentCanvas || !currentCanvas.elements || currentCanvas.elements.length === 0) {
         return null;
     }
 
-    let minX = Infinity, minY = Infinity;
-    let maxX = -Infinity, maxY = -Infinity;
-
-    currentCanvas.elements.forEach(el => {
-        minX = Math.min(minX, el.x);
-        minY = Math.min(minY, el.y);
-        maxX = Math.max(maxX, el.x + (el.width || 0));
-        maxY = Math.max(maxY, el.y + (el.height || 0));
-    });
-
-    if (minX === Infinity) return null;
-
-    return {
-        x: minX,
-        y: minY,
-        width: maxX - minX,
-        height: maxY - minY
-    };
+    return window.boundsUtils.calculateBounds(currentCanvas.elements);
 }
 
 /**
  * Calculate bounding box of selected elements
+ * Uses consolidated bounds-utils module.
  * @returns {Object|null} {x, y, width, height} or null if no selection
  */
 function getSelectionBounds() {
     const selectedElements = window.selectionAPI.getSelectedElements();
     if (selectedElements.length === 0) return null;
 
-    let minX = Infinity, minY = Infinity;
-    let maxX = -Infinity, maxY = -Infinity;
-
-    selectedElements.forEach(element => {
-        const data = element.data('elementData');
-        if (data) {
-            minX = Math.min(minX, data.x);
-            minY = Math.min(minY, data.y);
-            maxX = Math.max(maxX, data.x + (data.width || 0));
-            maxY = Math.max(maxY, data.y + (data.height || 0));
-        }
-    });
-
-    if (minX === Infinity) return null;
-
-    return {
-        x: minX,
-        y: minY,
-        width: maxX - minX,
-        height: maxY - minY
-    };
+    return window.boundsUtils.calculateBounds(selectedElements);
 }
 
 /**

@@ -332,27 +332,10 @@ function getExportDimensions() {
 
 /**
  * Calculate the bounding box of all canvas elements
+ * Uses consolidated bounds-utils module.
  */
 function calculateElementsBounds(svgElement) {
-    const elements = svgElement.querySelectorAll('.canvas-element');
-    if (elements.length === 0) return null;
-
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-
-    elements.forEach(el => {
-        const bbox = el.getBBox();
-        minX = Math.min(minX, bbox.x);
-        minY = Math.min(minY, bbox.y);
-        maxX = Math.max(maxX, bbox.x + bbox.width);
-        maxY = Math.max(maxY, bbox.y + bbox.height);
-    });
-
-    return {
-        x: minX,
-        y: minY,
-        width: maxX - minX,
-        height: maxY - minY
-    };
+    return window.boundsUtils.calculateBoundsFromSelector(svgElement, '.canvas-element');
 }
 
 /**

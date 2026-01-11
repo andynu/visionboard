@@ -26,7 +26,7 @@ function groupSelectedElements() {
     }
 
     // Calculate bounding box of all selected elements
-    const bounds = calculateGroupBounds(selectedElements);
+    const bounds = calculateGroupBounds(selectedElements) || { x: 0, y: 0, width: 100, height: 100 };
 
     // Generate group ID
     const groupId = 'group-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
@@ -157,30 +157,12 @@ function ungroupElement(groupElement) {
 
 /**
  * Calculate the bounding box of multiple elements
+ * Uses consolidated bounds-utils module.
  * @param {Array} elements - Array of SVG.js elements
- * @returns {Object} Bounding box { x, y, width, height }
+ * @returns {Object|null} Bounding box { x, y, width, height } or null if no elements
  */
 function calculateGroupBounds(elements) {
-    if (!elements || elements.length === 0) {
-        return { x: 0, y: 0, width: 100, height: 100 };
-    }
-
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-
-    elements.forEach(element => {
-        const bbox = element.bbox();
-        minX = Math.min(minX, bbox.x);
-        minY = Math.min(minY, bbox.y);
-        maxX = Math.max(maxX, bbox.x + bbox.width);
-        maxY = Math.max(maxY, bbox.y + bbox.height);
-    });
-
-    return {
-        x: minX,
-        y: minY,
-        width: maxX - minX,
-        height: maxY - minY
-    };
+    return window.boundsUtils.calculateBounds(elements);
 }
 
 /**

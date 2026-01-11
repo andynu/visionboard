@@ -3,21 +3,12 @@
 
 /**
  * Get bounding box information for an element
+ * Uses consolidated bounds-utils module.
  * @param {Object} element - SVG.js element
- * @returns {Object} Bounding box { x, y, width, height, cx, cy }
+ * @returns {Object} Bounding box { x, y, width, height, cx, cy, right, bottom }
  */
 function getElementBounds(element) {
-    const bbox = element.bbox();
-    return {
-        x: bbox.x,
-        y: bbox.y,
-        width: bbox.width,
-        height: bbox.height,
-        cx: bbox.x + bbox.width / 2,
-        cy: bbox.y + bbox.height / 2,
-        right: bbox.x + bbox.width,
-        bottom: bbox.y + bbox.height
-    };
+    return window.boundsUtils.getElementBoundsExtended(element);
 }
 
 /**
