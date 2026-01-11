@@ -484,226 +484,265 @@ function createSubmenuItem(item) {
 }
 
 /**
+ * Action handler map for context menu actions.
+ * Each handler is a function that executes the corresponding action.
+ * Handlers can access contextMenuTarget and contextMenuTargetData globals.
+ */
+const ACTION_HANDLERS = {
+    // Element actions
+    'delete': () => {
+        window.canvasCore.deleteSelectedElement();
+    },
+
+    'lock': () => {
+        if (window.layersPanel) {
+            window.layersPanel.toggleLockSelected();
+        }
+    },
+
+    'unlock': () => {
+        if (window.layersPanel) {
+            window.layersPanel.toggleLockSelected();
+        }
+    },
+
+    'duplicate': () => {
+        if (window.clipboardManager) {
+            window.clipboardManager.duplicateSelected();
+        }
+    },
+
+    'copy': () => {
+        if (window.clipboardManager) {
+            window.clipboardManager.copy();
+        }
+    },
+
+    'paste': () => {
+        if (window.clipboardManager) {
+            window.clipboardManager.paste();
+        }
+    },
+
+    'cut': () => {
+        if (window.clipboardManager) {
+            window.clipboardManager.cut();
+        }
+    },
+
+    // Layer actions
+    'bring-to-front': () => {
+        if (window.zOrder) {
+            const selectedElements = window.selectionAPI.getSelectedElements();
+            window.zOrder.bringToFront(selectedElements.length > 0 ? selectedElements : [contextMenuTarget]);
+        }
+    },
+
+    'bring-front': () => {
+        // Alias used in group menu
+        ACTION_HANDLERS['bring-to-front']();
+    },
+
+    'send-to-back': () => {
+        if (window.zOrder) {
+            const selectedElements = window.selectionAPI.getSelectedElements();
+            window.zOrder.sendToBack(selectedElements.length > 0 ? selectedElements : [contextMenuTarget]);
+        }
+    },
+
+    'send-back': () => {
+        // Alias used in group menu
+        ACTION_HANDLERS['send-to-back']();
+    },
+
+    // Transform actions
+    'flip-horizontal': () => {
+        if (window.transform) {
+            window.transform.flipSelectedHorizontal();
+        }
+    },
+
+    'flip-vertical': () => {
+        if (window.transform) {
+            window.transform.flipSelectedVertical();
+        }
+    },
+
+    // Filter actions
+    'filter-adjust': () => {
+        if (contextMenuTarget && window.imageFilters) {
+            window.imageFilters.showFilterPanel(contextMenuTarget);
+        }
+    },
+
+    'filter-grayscale': () => {
+        if (contextMenuTarget && window.imageFilters) {
+            window.imageFilters.toggleFilter(contextMenuTarget, 'grayscale');
+        }
+    },
+
+    'filter-sepia': () => {
+        if (contextMenuTarget && window.imageFilters) {
+            window.imageFilters.toggleFilter(contextMenuTarget, 'sepia');
+        }
+    },
+
+    'filter-invert': () => {
+        if (contextMenuTarget && window.imageFilters) {
+            window.imageFilters.toggleFilter(contextMenuTarget, 'invert');
+        }
+    },
+
+    'filter-reset': () => {
+        if (contextMenuTarget && window.imageFilters) {
+            window.imageFilters.resetFilters(contextMenuTarget);
+        }
+    },
+
+    // Folder actions
+    'folder-open': () => {
+        if (contextMenuTargetData && contextMenuTargetData.targetCanvasId) {
+            window.switchToCanvas(contextMenuTargetData.targetCanvasId);
+        }
+    },
+
+    'folder-rename': () => {
+        if (contextMenuTarget && contextMenuTargetData) {
+            const currentName = contextMenuTargetData.name || 'Folder';
+            const newName = prompt('Enter new folder name:', currentName);
+            if (newName && newName.trim() && newName.trim() !== currentName) {
+                renameFolderElement(contextMenuTarget, contextMenuTargetData, newName.trim());
+            }
+        }
+    },
+
+    'folder-color': () => {
+        if (contextMenuTarget && contextMenuTargetData) {
+            showFolderColorPicker(contextMenuTarget, contextMenuTargetData);
+        }
+    },
+
+    // Rectangle actions
+    'rect-style': () => {
+        if (contextMenuTarget && contextMenuTargetData) {
+            showRectangleStyleEditor(contextMenuTarget, contextMenuTargetData);
+        }
+    },
+
+    // Canvas actions
+    'add-rectangle': () => {
+        if (window.toolManager) {
+            window.toolManager.selectTool('rectangle');
+        }
+    },
+
+    'add-folder': () => {
+        window.canvasCore.showNewFolderDialog();
+    },
+
+    'select-all': () => {
+        if (window.keyboardShortcuts) {
+            window.keyboardShortcuts.selectAll();
+        } else {
+            selectAllElements();
+        }
+    },
+
+    'reset-view': () => {
+        if (window.zoomControls) {
+            window.zoomControls.zoomToFitAll();
+        } else {
+            resetCanvasView();
+        }
+    },
+
+    'export-image': () => {
+        if (window.showExportDialog) {
+            window.showExportDialog();
+        }
+    },
+
+    'set-background-color': () => {
+        if (window.canvasCore && window.canvasCore.showBackgroundColorPicker) {
+            window.canvasCore.showBackgroundColorPicker();
+        }
+    },
+
+    // Notes
+    'edit-note': () => {
+        if (contextMenuTarget && window.elementNotes) {
+            window.elementNotes.openEditor(contextMenuTarget);
+        }
+    },
+
+    // Grouping actions
+    'group': () => {
+        if (window.grouping && window.grouping.canGroup()) {
+            window.grouping.groupSelectedElements();
+        }
+    },
+
+    'ungroup': () => {
+        if (window.grouping) {
+            window.grouping.ungroupElement(contextMenuTarget);
+        }
+    },
+
+    // Alignment actions
+    'align-left': () => {
+        if (window.alignment) window.alignment.alignLeft();
+    },
+
+    'align-center-h': () => {
+        if (window.alignment) window.alignment.alignCenterH();
+    },
+
+    'align-right': () => {
+        if (window.alignment) window.alignment.alignRight();
+    },
+
+    'align-top': () => {
+        if (window.alignment) window.alignment.alignTop();
+    },
+
+    'align-middle': () => {
+        if (window.alignment) window.alignment.alignMiddle();
+    },
+
+    'align-bottom': () => {
+        if (window.alignment) window.alignment.alignBottom();
+    },
+
+    'distribute-h': () => {
+        if (window.alignment) window.alignment.distributeHorizontally();
+    },
+
+    'distribute-v': () => {
+        if (window.alignment) window.alignment.distributeVertically();
+    }
+};
+
+/**
  * Execute a context menu action
  * @param {string} action - Action identifier
  */
 function executeAction(action) {
-    switch (action) {
-        // Element actions
-        case 'delete':
-            window.canvasCore.deleteSelectedElement();
-            break;
-
-        case 'lock':
-        case 'unlock':
-            if (window.layersPanel) {
-                window.layersPanel.toggleLockSelected();
-            }
-            break;
-
-        case 'duplicate':
-            if (window.clipboardManager) {
-                window.clipboardManager.duplicateSelected();
-            }
-            break;
-
-        case 'copy':
-            if (window.clipboardManager) {
-                window.clipboardManager.copy();
-            }
-            break;
-
-        case 'paste':
-            if (window.clipboardManager) {
-                window.clipboardManager.paste();
-            }
-            break;
-
-        // Layer actions
-        case 'bring-to-front':
-            if (window.zOrder) {
-                const selectedElements = window.selectionAPI.getSelectedElements();
-                window.zOrder.bringToFront(selectedElements.length > 0 ? selectedElements : [contextMenuTarget]);
-            }
-            break;
-
-        case 'send-to-back':
-            if (window.zOrder) {
-                const selectedElements = window.selectionAPI.getSelectedElements();
-                window.zOrder.sendToBack(selectedElements.length > 0 ? selectedElements : [contextMenuTarget]);
-            }
-            break;
-
-        // Transform actions
-        case 'flip-horizontal':
-            if (window.transform) {
-                window.transform.flipSelectedHorizontal();
-            }
-            break;
-
-        case 'flip-vertical':
-            if (window.transform) {
-                window.transform.flipSelectedVertical();
-            }
-            break;
-
-        // Filter actions
-        case 'filter-adjust':
-            if (contextMenuTarget && window.imageFilters) {
-                window.imageFilters.showFilterPanel(contextMenuTarget);
-            }
-            break;
-
-        case 'filter-grayscale':
-            if (contextMenuTarget && window.imageFilters) {
-                window.imageFilters.toggleFilter(contextMenuTarget, 'grayscale');
-            }
-            break;
-
-        case 'filter-sepia':
-            if (contextMenuTarget && window.imageFilters) {
-                window.imageFilters.toggleFilter(contextMenuTarget, 'sepia');
-            }
-            break;
-
-        case 'filter-invert':
-            if (contextMenuTarget && window.imageFilters) {
-                window.imageFilters.toggleFilter(contextMenuTarget, 'invert');
-            }
-            break;
-
-        case 'filter-reset':
-            if (contextMenuTarget && window.imageFilters) {
-                window.imageFilters.resetFilters(contextMenuTarget);
-            }
-            break;
-
-        // Folder actions
-        case 'folder-open':
-            if (contextMenuTargetData && contextMenuTargetData.targetCanvasId) {
-                window.switchToCanvas(contextMenuTargetData.targetCanvasId);
-            }
-            break;
-
-        case 'folder-rename':
-            if (contextMenuTarget && contextMenuTargetData) {
-                const currentName = contextMenuTargetData.name || 'Folder';
-                const newName = prompt('Enter new folder name:', currentName);
-                if (newName && newName.trim() && newName.trim() !== currentName) {
-                    renameFolderElement(contextMenuTarget, contextMenuTargetData, newName.trim());
-                }
-            }
-            break;
-
-        case 'folder-color':
-            if (contextMenuTarget && contextMenuTargetData) {
-                showFolderColorPicker(contextMenuTarget, contextMenuTargetData);
-            }
-            break;
-
-        // Rectangle actions
-        case 'rect-style':
-            if (contextMenuTarget && contextMenuTargetData) {
-                showRectangleStyleEditor(contextMenuTarget, contextMenuTargetData);
-            }
-            break;
-
-        // Canvas actions
-        case 'add-rectangle':
-            if (window.toolManager) {
-                window.toolManager.selectTool('rectangle');
-            }
-            break;
-
-        case 'add-folder':
-            window.canvasCore.showNewFolderDialog();
-            break;
-
-        case 'select-all':
-            if (window.keyboardShortcuts) {
-                window.keyboardShortcuts.selectAll();
-            } else {
-                selectAllElements();
-            }
-            break;
-
-        case 'reset-view':
-            if (window.zoomControls) {
-                window.zoomControls.zoomToFitAll();
-            } else {
-                resetCanvasView();
-            }
-            break;
-
-        case 'export-image':
-            if (window.showExportDialog) {
-                window.showExportDialog();
-            }
-            break;
-
-        case 'set-background-color':
-            if (window.canvasCore && window.canvasCore.showBackgroundColorPicker) {
-                window.canvasCore.showBackgroundColorPicker();
-            }
-            break;
-
-        // Notes
-        case 'edit-note':
-            if (contextMenuTarget && window.elementNotes) {
-                window.elementNotes.openEditor(contextMenuTarget);
-            }
-            break;
-
-        // Grouping actions
-        case 'group':
-            if (window.grouping && window.grouping.canGroup()) {
-                window.grouping.groupSelectedElements();
-            }
-            break;
-
-        case 'ungroup':
-            if (window.grouping) {
-                window.grouping.ungroupElement(contextMenuTarget);
-            }
-            break;
-
-        // Alignment actions
-        case 'align-left':
-            if (window.alignment) window.alignment.alignLeft();
-            break;
-        case 'align-center-h':
-            if (window.alignment) window.alignment.alignCenterH();
-            break;
-        case 'align-right':
-            if (window.alignment) window.alignment.alignRight();
-            break;
-        case 'align-top':
-            if (window.alignment) window.alignment.alignTop();
-            break;
-        case 'align-middle':
-            if (window.alignment) window.alignment.alignMiddle();
-            break;
-        case 'align-bottom':
-            if (window.alignment) window.alignment.alignBottom();
-            break;
-        case 'distribute-h':
-            if (window.alignment) window.alignment.distributeHorizontally();
-            break;
-        case 'distribute-v':
-            if (window.alignment) window.alignment.distributeVertically();
-            break;
-
-        default:
-            // Handle filter preset actions (filter-preset-bw, filter-preset-vintage, etc.)
-            if (action.startsWith('filter-preset-')) {
-                const presetId = action.replace('filter-preset-', '');
-                if (contextMenuTarget && window.imageFilters) {
-                    window.imageFilters.applyPreset(contextMenuTarget, presetId);
-                }
-            } else {
-                console.log(`Unknown action: ${action}`);
-            }
+    // Check for direct handler match
+    if (ACTION_HANDLERS[action]) {
+        ACTION_HANDLERS[action]();
+        return;
     }
+
+    // Handle dynamic filter preset actions (filter-preset-bw, filter-preset-vintage, etc.)
+    if (action.startsWith('filter-preset-')) {
+        const presetId = action.replace('filter-preset-', '');
+        if (contextMenuTarget && window.imageFilters) {
+            window.imageFilters.applyPreset(contextMenuTarget, presetId);
+        }
+        return;
+    }
+
+    console.log(`Unknown action: ${action}`);
 }
 
 /**
