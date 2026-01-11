@@ -133,12 +133,16 @@ function addRectangleToCanvas(rectangleData, canvas, currentCanvas) {
     return rect;
 }
 
-function makeFolderInteractive(element, canvas, currentCanvas) {
-    element.addClass('canvas-element folder-element');
-
-    // Create resize handles group
-    const resizeHandles = window.resizeAPI.createResizeHandles(element, canvas);
-
+/**
+ * Sets up shared interactive behaviors for canvas elements.
+ * Handles click-to-select, drag with multi-selection support, grid snapping,
+ * resize handles, tooltips, and notes.
+ *
+ * @param {Object} element - The SVG.js element to make interactive
+ * @param {Object} canvas - The SVG.js canvas instance
+ * @param {Object} resizeHandles - The resize handles group for this element
+ */
+function setupElementInteraction(element, canvas, resizeHandles) {
     // Click to select (with modifier key support)
     element.on('click', (event) => {
         // If hand tool + Shift, let click bubble for panning
@@ -147,15 +151,6 @@ function makeFolderInteractive(element, canvas, currentCanvas) {
         }
         event.stopPropagation();
         selectElement(element, event);
-    });
-
-    // Double-click to navigate to folder canvas
-    element.dblclick((event) => {
-        event.stopPropagation();
-        const folderData = element.data('elementData');
-        if (folderData.targetCanvasId && window.switchToCanvas) {
-            window.switchToCanvas(folderData.targetCanvasId);
-        }
     });
 
     // Make draggable (supports multi-selection drag)
@@ -296,6 +291,25 @@ function makeFolderInteractive(element, canvas, currentCanvas) {
     }
 }
 
+function makeFolderInteractive(element, canvas, currentCanvas) {
+    element.addClass('canvas-element folder-element');
+
+    // Create resize handles group
+    const resizeHandles = window.resizeAPI.createResizeHandles(element, canvas);
+
+    // Double-click to navigate to folder canvas (folder-specific behavior)
+    element.dblclick((event) => {
+        event.stopPropagation();
+        const folderData = element.data('elementData');
+        if (folderData.targetCanvasId && window.switchToCanvas) {
+            window.switchToCanvas(folderData.targetCanvasId);
+        }
+    });
+
+    // Setup shared interaction behaviors
+    setupElementInteraction(element, canvas, resizeHandles);
+}
+
 function makeElementInteractive(element, canvas, currentCanvas) {
     // Handle both SVG.js v2.7.1 and potential version differences
     if (!element || typeof element.addClass !== 'function') {
@@ -308,152 +322,8 @@ function makeElementInteractive(element, canvas, currentCanvas) {
     // Create resize handles group
     const resizeHandles = window.resizeAPI.createResizeHandles(element, canvas);
 
-    // Click to select (with modifier key support)
-    element.on('click', (event) => {
-        // If hand tool + Shift, let click bubble for panning
-        if (event.shiftKey && window.toolManager?.getActiveTool()?.name === 'hand') {
-            return;
-        }
-        event.stopPropagation();
-        selectElement(element, event);
-    });
-
-    // Make draggable (supports multi-selection drag)
-    let dragData = { offsetX: 0, offsetY: 0 };
-    let multiDragOffsets = new Map();
-
-    element.mousedown((event) => {
-        // Don't start dragging if we're clicking on a resize handle
-        if (window.resizeAPI.getIsResizing()) return;
-
-        // Ignore middle mouse button - let it bubble up for panning
-        if (event.button === 1) return;
-
-        // If hand tool + Shift, let mousedown bubble for panning
-        if (event.shiftKey && window.toolManager?.getActiveTool()?.name === 'hand') {
-            return;
-        }
-
-        // Check if element is locked - prevent dragging locked elements
-        const elementData = element.data('elementData');
-        if (elementData && elementData.locked) {
-            // Still allow click through for selection, but don't start drag
-            event.stopPropagation();
-            return;
-        }
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        // Record state before drag starts for undo
-        if (window.undoRedoManager) {
-            window.undoRedoManager.recordState();
-        }
-
-        isDragging = true;
-
-        // Get SVG point for accurate coordinate conversion
-        const svg = canvas.node;
-        const pt = svg.createSVGPoint();
-        pt.x = event.clientX;
-        pt.y = event.clientY;
-        const svgPt = pt.matrixTransform(svg.getScreenCTM().inverse());
-
-        // Calculate offset from mouse to element origin
-        dragData.offsetX = svgPt.x - element.x();
-        dragData.offsetY = svgPt.y - element.y();
-
-        // If this element is part of a multi-selection, calculate offsets for all selected elements
-        const selectedElements = window.selectionAPI.getSelectedElements();
-        multiDragOffsets.clear();
-        if (selectedElements.length > 1 && window.selectionAPI.isSelected(element)) {
-            selectedElements.forEach(sel => {
-                multiDragOffsets.set(sel, {
-                    offsetX: svgPt.x - sel.x(),
-                    offsetY: svgPt.y - sel.y()
-                });
-            });
-        }
-
-        const mousemove = (e) => {
-            if (isDragging) {
-                // Convert mouse position to SVG coordinates
-                pt.x = e.clientX;
-                pt.y = e.clientY;
-                const currentSvgPt = pt.matrixTransform(svg.getScreenCTM().inverse());
-
-                // Move all selected elements if multi-selection, otherwise just this one
-                if (multiDragOffsets.size > 1) {
-                    multiDragOffsets.forEach((offset, sel) => {
-                        let newX = currentSvgPt.x - offset.offsetX;
-                        let newY = currentSvgPt.y - offset.offsetY;
-
-                        // Apply snap if enabled
-                        if (window.gridSnap && window.gridSnap.isSnapEnabled()) {
-                            const elementData = sel.data('elementData');
-                            const width = elementData ? elementData.width : sel.width();
-                            const height = elementData ? elementData.height : sel.height();
-                            const snapped = window.gridSnap.snapElementPosition(newX, newY, width, height);
-                            newX = snapped.x;
-                            newY = snapped.y;
-                        }
-
-                        sel.move(newX, newY);
-                        // Update selection rectangle during drag
-                        window.selectionAPI.updateSelectionRect(sel);
-                    });
-                } else {
-                    // Move single element
-                    let newX = currentSvgPt.x - dragData.offsetX;
-                    let newY = currentSvgPt.y - dragData.offsetY;
-
-                    // Apply snap if enabled
-                    if (window.gridSnap && window.gridSnap.isSnapEnabled()) {
-                        const elementData = element.data('elementData');
-                        const width = elementData ? elementData.width : element.width();
-                        const height = elementData ? elementData.height : element.height();
-                        const snapped = window.gridSnap.snapElementPosition(newX, newY, width, height);
-                        newX = snapped.x;
-                        newY = snapped.y;
-                    }
-
-                    element.move(newX, newY);
-                    // Update resize handles position
-                    window.resizeAPI.updateResizeHandles(element, resizeHandles);
-                    // Update selection rectangle during drag
-                    window.selectionAPI.updateSelectionRect(element);
-                }
-            }
-        };
-
-        const mouseup = () => {
-            isDragging = false;
-            // Update positions for all moved elements
-            if (multiDragOffsets.size > 1) {
-                multiDragOffsets.forEach((offset, sel) => {
-                    window.canvasCore.updateElementPosition(sel);
-                });
-            } else {
-                window.canvasCore.updateElementPosition(element);
-            }
-            multiDragOffsets.clear();
-            document.removeEventListener('mousemove', mousemove);
-            document.removeEventListener('mouseup', mouseup);
-        };
-
-        document.addEventListener('mousemove', mousemove);
-        document.addEventListener('mouseup', mouseup);
-    });
-
-    // Attach tooltip handlers
-    if (window.elementTooltip) {
-        window.elementTooltip.attachHandlers(element);
-    }
-
-    // Attach note handlers (shows indicator if element has a note)
-    if (window.elementNotes) {
-        window.elementNotes.attachHandlers(element);
-    }
+    // Setup shared interaction behaviors
+    setupElementInteraction(element, canvas, resizeHandles);
 }
 
 function selectElement(element, event) {
