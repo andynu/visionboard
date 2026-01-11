@@ -438,12 +438,16 @@ function setupCanvasPanning() {
 
     // Canvas container mousedown for left-click panning on empty areas
     canvasContainer.addEventListener('mousedown', (event) => {
-        // Left mouse button (button 0) panning - only on empty canvas
-        if (event.button === 0 &&
-            (event.target === canvasContainer || event.target === canvas.node) &&
-            !window.elementsAPI.getIsDragging() && !window.resizeAPI.getIsResizing()) {
-            event.preventDefault();
-            startPanning(event);
+        // Left mouse button (button 0) panning
+        if (event.button === 0 && !window.elementsAPI.getIsDragging() && !window.resizeAPI.getIsResizing()) {
+            // Allow panning on empty canvas, OR on elements when Shift+hand tool is active
+            const isEmptyCanvas = event.target === canvasContainer || event.target === canvas.node;
+            const isShiftHandTool = event.shiftKey && window.toolManager?.getActiveTool()?.name === 'hand';
+
+            if (isEmptyCanvas || isShiftHandTool) {
+                event.preventDefault();
+                startPanning(event);
+            }
         }
     });
 

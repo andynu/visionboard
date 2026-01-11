@@ -141,6 +141,10 @@ function makeFolderInteractive(element, canvas, currentCanvas) {
 
     // Click to select (with modifier key support)
     element.on('click', (event) => {
+        // If hand tool + Shift, let click bubble for panning
+        if (event.shiftKey && window.toolManager?.getActiveTool()?.name === 'hand') {
+            return;
+        }
         event.stopPropagation();
         selectElement(element, event);
     });
@@ -164,6 +168,11 @@ function makeFolderInteractive(element, canvas, currentCanvas) {
 
         // Ignore middle mouse button - let it bubble up for panning
         if (event.button === 1) return;
+
+        // If hand tool + Shift, let mousedown bubble for panning
+        if (event.shiftKey && window.toolManager?.getActiveTool()?.name === 'hand') {
+            return;
+        }
 
         // Check if element is locked - prevent dragging locked elements
         const elementData = element.data('elementData');
@@ -301,6 +310,10 @@ function makeElementInteractive(element, canvas, currentCanvas) {
 
     // Click to select (with modifier key support)
     element.on('click', (event) => {
+        // If hand tool + Shift, let click bubble for panning
+        if (event.shiftKey && window.toolManager?.getActiveTool()?.name === 'hand') {
+            return;
+        }
         event.stopPropagation();
         selectElement(element, event);
     });
@@ -315,6 +328,11 @@ function makeElementInteractive(element, canvas, currentCanvas) {
 
         // Ignore middle mouse button - let it bubble up for panning
         if (event.button === 1) return;
+
+        // If hand tool + Shift, let mousedown bubble for panning
+        if (event.shiftKey && window.toolManager?.getActiveTool()?.name === 'hand') {
+            return;
+        }
 
         // Check if element is locked - prevent dragging locked elements
         const elementData = element.data('elementData');
