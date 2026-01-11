@@ -537,11 +537,7 @@ function reorderLayers(fromId, toId) {
 // Note: showNotification is provided by notification.js
 
 // Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeLayersPanel);
-} else {
-    initializeLayersPanel();
-}
+onReady(initializeLayersPanel);
 
 // Export for use by other modules
 window.layersPanel = {

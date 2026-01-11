@@ -217,11 +217,7 @@ function attachKeyboardShortcuts() {
 }
 
 // Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', attachKeyboardShortcuts);
-} else {
-    attachKeyboardShortcuts();
-}
+onReady(attachKeyboardShortcuts);
 
 // Export for use by other modules
 window.transform = {

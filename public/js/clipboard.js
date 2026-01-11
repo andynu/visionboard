@@ -199,11 +199,7 @@ const clipboardManager = (function() {
     }
 
     // Auto-initialize when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
+    onReady(init);
 
     // Duplicate selected elements in place
     function duplicateSelected() {

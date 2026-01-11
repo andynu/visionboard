@@ -416,11 +416,7 @@ function initializeGroupingShortcuts() {
 }
 
 // Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeGroupingShortcuts);
-} else {
-    initializeGroupingShortcuts();
-}
+onReady(initializeGroupingShortcuts);
 
 // Export for use by other modules
 window.grouping = {

@@ -76,3 +76,19 @@ Object.freeze(CONFIG.grid);
 
 // Export for use in modules
 window.CONFIG = CONFIG;
+
+/**
+ * Execute a callback when the DOM is ready.
+ * If the DOM is already loaded, the callback is executed immediately.
+ * @param {Function} callback - Function to execute when DOM is ready
+ */
+function onReady(callback) {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', callback);
+    } else {
+        callback();
+    }
+}
+
+// Export for use in modules
+window.onReady = onReady;
