@@ -281,23 +281,7 @@ function applyLoadedFilters(element, imageData) {
     }
 }
 
-/**
- * Show a brief notification
- * @param {string} message - Message to display
- */
-function showNotification(message) {
-    const notification = document.getElementById('autosave-notification');
-    if (!notification) return;
-
-    notification.textContent = message;
-    notification.className = 'autosave-notification';
-    notification.style.background = '#2196F3';
-    notification.classList.add('show');
-
-    setTimeout(() => {
-        notification.classList.remove('show');
-    }, 1200);
-}
+// Note: showNotification is provided by notification.js
 
 /**
  * Check if an element has any non-default filters

@@ -41,7 +41,7 @@ const clipboardManager = (function() {
     // Paste elements from clipboard
     function paste() {
         if (clipboard.length === 0) {
-            showNotification('Nothing to paste', 'info');
+            showNotification('Nothing to paste', {color: 'info'});
             return false;
         }
 
@@ -150,26 +150,7 @@ const clipboardManager = (function() {
         copySource = null;
     }
 
-    // Show brief notification
-    function showNotification(message, type = 'success') {
-        const notification = document.getElementById('autosave-notification');
-        if (!notification) return;
-
-        notification.textContent = message;
-        notification.className = 'autosave-notification';
-
-        if (type === 'info') {
-            notification.style.background = '#9E9E9E';
-        } else {
-            notification.style.background = '#2196F3';
-        }
-
-        notification.classList.add('show');
-
-        setTimeout(() => {
-            notification.classList.remove('show');
-        }, 1200);
-    }
+    // Note: showNotification is provided by notification.js
 
     // Initialize keyboard shortcuts
     function init() {

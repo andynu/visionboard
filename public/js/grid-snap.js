@@ -59,13 +59,13 @@ const gridSnap = (function() {
         gridVisible = !gridVisible;
         updateGridVisibility();
         updateToolbarButtons();
-        showNotification(gridVisible ? 'Grid On' : 'Grid Off');
+        showGridNotification(gridVisible ? 'Grid On' : 'Grid Off');
     }
 
     function toggleSnap() {
         snapEnabled = !snapEnabled;
         updateToolbarButtons();
-        showNotification(snapEnabled ? 'Snap On' : 'Snap Off');
+        showGridNotification(snapEnabled ? 'Snap On' : 'Snap Off');
     }
 
     function isGridVisible() {
@@ -282,22 +282,9 @@ const gridSnap = (function() {
         return { x: snappedX, y: snappedY };
     }
 
-    function showNotification(message) {
-        const notification = document.getElementById('autosave-notification');
-        if (!notification) return;
-
-        if (notification.hideTimeout) {
-            clearTimeout(notification.hideTimeout);
-        }
-
-        notification.textContent = message;
-        notification.className = 'autosave-notification';
-        notification.style.background = '#007AFF';
-        notification.classList.add('show');
-
-        notification.hideTimeout = setTimeout(() => {
-            notification.classList.remove('show');
-        }, 1000);
+    // Note: uses shared showNotification from notification.js with accent color for grid/snap
+    function showGridNotification(message) {
+        showNotification(message, {color: 'accent', timeout: 1000});
     }
 
     function getCurrentSettings() {

@@ -56,7 +56,7 @@ const toolbarScaleManager = (function() {
 
         applyScale(scale);
         saveToStorage();
-        showNotification(`Toolbar scale: ${scale}x`);
+        showScaleNotification(`Toolbar scale: ${scale}x`);
     }
 
     /**
@@ -98,22 +98,9 @@ const toolbarScaleManager = (function() {
         });
     }
 
-    /**
-     * Show notification
-     * @param {string} message - Message to display
-     */
-    function showNotification(message) {
-        const notification = document.getElementById('autosave-notification');
-        if (!notification) return;
-
-        notification.textContent = message;
-        notification.className = 'autosave-notification';
-        notification.style.background = '#9C27B0';
-        notification.classList.add('show');
-
-        setTimeout(() => {
-            notification.classList.remove('show');
-        }, 1500);
+    // Note: uses shared showNotification from notification.js with purple color for scale
+    function showScaleNotification(message) {
+        showNotification(message, {color: 'purple', timeout: 1500});
     }
 
     // Initialize when DOM is ready

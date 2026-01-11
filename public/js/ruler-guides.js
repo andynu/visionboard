@@ -667,23 +667,7 @@ function snapToGuides(x, y, width, height, threshold = 10) {
     return { x: snappedX, y: snappedY };
 }
 
-/**
- * Show notification
- * @param {string} message
- */
-function showNotification(message) {
-    const notification = document.getElementById('autosave-notification');
-    if (!notification) return;
-
-    notification.textContent = message;
-    notification.className = 'autosave-notification';
-    notification.style.background = '#2196F3';
-    notification.classList.add('show');
-
-    setTimeout(() => {
-        notification.classList.remove('show');
-    }, 1200);
-}
+// Note: showNotification is provided by notification.js
 
 // Keyboard shortcut for toggle rulers (Ctrl/Cmd + R)
 function attachKeyboardShortcut() {

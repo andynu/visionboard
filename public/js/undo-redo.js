@@ -84,7 +84,7 @@ const undoRedoManager = (function() {
         const previousState = undoStack.pop();
         await applyState(previousState);
 
-        showNotification('Undo');
+        showUndoRedoNotification('Undo');
     }
 
     // Redo the last undone action
@@ -101,7 +101,7 @@ const undoRedoManager = (function() {
         const redoState = redoStack.pop();
         await applyState(redoState);
 
-        showNotification('Redo');
+        showUndoRedoNotification('Redo');
     }
 
     // Clear history (e.g., when switching canvases)
@@ -137,19 +137,9 @@ const undoRedoManager = (function() {
         }
     }
 
-    // Show brief notification
-    function showNotification(action) {
-        const notification = document.getElementById('autosave-notification');
-        if (!notification) return;
-
-        notification.textContent = action;
-        notification.className = 'autosave-notification';
-        notification.style.background = '#2196F3';
-        notification.classList.add('show');
-
-        setTimeout(() => {
-            notification.classList.remove('show');
-        }, 800);
+    // Note: uses shared showNotification from notification.js with shorter timeout for undo/redo
+    function showUndoRedoNotification(message) {
+        showNotification(message, {timeout: 800});
     }
 
     // Initialize keyboard shortcuts

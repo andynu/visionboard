@@ -109,7 +109,7 @@ function zoomToFitAll() {
     if (!bounds) {
         // No elements - reset to initial view
         resetView();
-        showNotification('Canvas is empty');
+        showNotification('Canvas is empty', {color: 'purple'});
         return;
     }
 
@@ -143,7 +143,7 @@ function zoomToFitAll() {
     }
 
     animateViewBox(canvas, viewBox);
-    showNotification('Zoom to fit');
+    showNotification('Zoom to fit', {color: 'purple'});
 }
 
 /**
@@ -155,7 +155,7 @@ function zoomToSelection() {
 
     const bounds = getSelectionBounds();
     if (!bounds) {
-        showNotification('No selection');
+        showNotification('No selection', {color: 'purple'});
         return;
     }
 
@@ -186,7 +186,7 @@ function zoomToSelection() {
     }
 
     animateViewBox(canvas, viewBox);
-    showNotification('Zoom to selection');
+    showNotification('Zoom to selection', {color: 'purple'});
 }
 
 /**
@@ -213,7 +213,7 @@ function zoomTo100() {
     };
 
     animateViewBox(canvas, viewBox);
-    showNotification('Zoom 100%');
+    showNotification('Zoom 100%', {color: 'purple'});
 }
 
 /**
@@ -231,25 +231,10 @@ function resetView() {
         height: vb.height
     });
 
-    showNotification('View reset');
+    showNotification('View reset', {color: 'purple'});
 }
 
-/**
- * Show notification
- */
-function showNotification(message) {
-    const notification = document.getElementById('autosave-notification');
-    if (!notification) return;
-
-    notification.textContent = message;
-    notification.className = 'autosave-notification';
-    notification.style.background = '#9C27B0';
-    notification.classList.add('show');
-
-    setTimeout(() => {
-        notification.classList.remove('show');
-    }, 1200);
-}
+// Note: showNotification is provided by notification.js (uses 'purple' color for zoom operations)
 
 /**
  * Attach keyboard shortcuts
