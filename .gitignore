@@ -24,3 +24,10 @@ plan*.md
 
 # Local config
 .DS_Store
+.claude/settings.local.json
+
+# Test output
+test-results/
+
+# Runtime files
+server.pid
