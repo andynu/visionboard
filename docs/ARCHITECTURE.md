@@ -421,15 +421,77 @@ resize -> element: "modifies dimensions"
       "width": 200, "height": 200,
       "rotation": 0,
       "zIndex": 1,
+
+      // Image-specific properties
       "src": "/api/images/filename.png",
+      "flipH": false,
+      "flipV": false,
+      "filters": {
+        "grayscale": 0,
+        "brightness": 100,
+        "contrast": 100,
+        "blur": 0,
+        "sepia": 0,
+        "saturate": 100,
+        "hueRotate": 0,
+        "invert": 0,
+        "opacity": 100
+      },
+
+      // Folder-specific properties
+      "name": "Folder Name",
       "targetCanvasId": "child-canvas-id",
+
+      // Rectangle-specific properties
       "fill": "#color",
       "stroke": "#color",
-      "strokeWidth": 2
+      "strokeWidth": 2,
+      "opacity": 1,
+      "cornerRadius": 0,
+
+      // Annotation (all element types)
+      "note": "User notes attached to this element"
     }
   ]
 }
 ```
+
+#### Element Property Reference
+
+| Property | Type | Applies To | Description |
+|----------|------|------------|-------------|
+| `id` | string | All | Unique UUID for the element |
+| `type` | string | All | Element type: `image`, `folder`, or `rectangle` |
+| `x`, `y` | number | All | Position coordinates on canvas |
+| `width`, `height` | number | All | Dimensions in canvas units |
+| `rotation` | number | All | Rotation angle in degrees (0-360) |
+| `zIndex` | number | All | Stacking order (higher = on top) |
+| `note` | string | All | User annotation text (optional) |
+| `src` | string | image | API path to image file (e.g., `/api/images/uuid.png`) |
+| `flipH` | boolean | image | Horizontal flip transform (default: false) |
+| `flipV` | boolean | image | Vertical flip transform (default: false) |
+| `filters` | object | image | CSS filter values (see below) |
+| `name` | string | folder | Display name shown on folder element |
+| `targetCanvasId` | string | folder | Canvas ID to navigate to when opened |
+| `fill` | string | rectangle | Fill color (CSS color value) |
+| `stroke` | string | rectangle | Stroke color (CSS color value) |
+| `strokeWidth` | number | rectangle | Stroke width in pixels |
+| `opacity` | number | rectangle | Element opacity (0-1, default: 1) |
+| `cornerRadius` | number | rectangle | Border radius in pixels (default: 0) |
+
+**Filter Object Properties:**
+
+| Filter | Range | Default | Description |
+|--------|-------|---------|-------------|
+| `grayscale` | 0-100 | 0 | Grayscale percentage |
+| `brightness` | 0-200 | 100 | Brightness (100 = normal) |
+| `contrast` | 0-200 | 100 | Contrast (100 = normal) |
+| `blur` | 0-20 | 0 | Blur in pixels |
+| `sepia` | 0-100 | 0 | Sepia percentage |
+| `saturate` | 0-200 | 100 | Saturation (100 = normal) |
+| `hueRotate` | 0-360 | 0 | Hue rotation in degrees |
+| `invert` | 0-100 | 0 | Invert percentage |
+| `opacity` | 0-100 | 100 | Filter opacity percentage |
 
 ### Tree JSON Structure
 
