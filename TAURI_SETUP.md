@@ -95,7 +95,7 @@ The following changes were made to support Tauri:
 
 1. **Backend Replacement**: Express routes replaced with Tauri commands
 2. **API Adapter**: Created `api-adapter.js` to provide unified API
-3. **Frontend Updates**: Modified `canvas.js`, `drag-drop.js`, and `tree-nav.js` to use API adapter
+3. **Frontend Updates**: Modified `canvas-core.js`, `drag-drop.js`, and `tree-nav.js` to use API adapter
 4. **Configuration**: Updated `tauri.conf.json` for standalone operation
 
 ### Maintaining Express Compatibility
