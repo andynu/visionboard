@@ -34,11 +34,13 @@ server/
 public/
   index.html            # Main application page
   css/main.css          # Application styles
-  js/                   # Frontend JavaScript modules (32 files)
+  js/                   # Frontend JavaScript modules (34 files)
     # Core canvas
+    bounds-utils.js     # Shared bounding box calculation utilities
     canvas-core.js      # Canvas init, loading, panning, zooming, autosave
     canvas-elements.js  # Element creation (images, folders, rectangles)
     canvas-resize.js    # Resize handle creation and interaction
+    notification.js     # Toast notification system for user feedback
     selection.js        # Single/multi-element selection management
 
     # User interaction
@@ -110,7 +112,7 @@ public/
 
 #### Frontend Architecture
 - SVG.js handles canvas rendering and element interactions
-- 32 modular JavaScript files organized by responsibility (see Project Structure)
+- 34 modular JavaScript files organized by responsibility (see Project Structure)
 - Element selection/dragging system with resize handles
 - Real-time canvas updates with auto-save functionality
 - Tauri integration layer for desktop app with backend adapter pattern

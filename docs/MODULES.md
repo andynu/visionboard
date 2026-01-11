@@ -1,16 +1,18 @@
 # Vision Board JavaScript Modules
 
-Quick reference for all 32 frontend JavaScript modules in `public/js/`.
+Quick reference for all 34 frontend JavaScript modules in `public/js/`.
 
 ## Core
 
 | Module | Description |
 |--------|-------------|
+| `bounds-utils.js` | Shared bounding box calculation utilities for elements |
 | `canvas-core.js` | Canvas initialization, loading, rendering, panning, zooming, and autosave |
 | `canvas-elements.js` | Element creation (images, folders, rectangles) and drag interaction |
 | `canvas-resize.js` | Resize handle creation, positioning, and resize interaction |
-| `selection.js` | Single and multi-element selection state management |
 | `config.js` | Centralized application configuration constants |
+| `notification.js` | Toast notification system for user feedback |
+| `selection.js` | Single and multi-element selection state management |
 
 ## User Interaction
 
