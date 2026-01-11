@@ -15,9 +15,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Testing
 - Uses Playwright for browser automation tests
-- Run individual test files: `node test-[name].js` (e.g., `node test-visit.js`)
-- Tests are not integrated into npm scripts; must be run manually
-- Test files include: visit, upload, resize, hierarchy, breadcrumb, folder-nav functionality
+- `npm test` - Run all e2e tests
+- `npm run test:unit` - Run unit tests
+- Test files in `test/e2e/` and `test/unit/`
 
 ### Project Structure
 
