@@ -10,6 +10,32 @@ let viewBoxStart = { x: 0, y: 0, width: 0, height: 0 };
 let zoomLevel = 1.0;
 let lastMousePosition = { x: 0, y: 0 };
 
+/**
+ * Validate canvas data structure before rendering
+ * @param {Object} canvasData - Canvas data to validate
+ * @returns {boolean} True if valid, false otherwise
+ */
+function validateCanvasData(canvasData) {
+    // Check for required top-level properties
+    if (!canvasData || typeof canvasData !== 'object') return false;
+    if (!canvasData.id) return false;
+    if (!Array.isArray(canvasData.elements)) return false;
+
+    // Validate each element
+    for (const element of canvasData.elements) {
+        // Required properties for all elements
+        if (!element.id || !element.type) return false;
+        if (typeof element.x !== 'number' || typeof element.y !== 'number') return false;
+        if (typeof element.width !== 'number' || typeof element.height !== 'number') return false;
+
+        // Type-specific validation
+        if (element.type === 'image' && !element.src) return false;
+        if (element.type === 'folder' && (!element.name || !element.targetCanvasId)) return false;
+    }
+
+    return true;
+}
+
 function initializeCanvas() {
     const canvasContainer = document.getElementById('canvas');
     canvas = SVG(canvasContainer).size('100%', '100%');
@@ -40,7 +66,21 @@ function initializeCanvas() {
 
 async function loadCanvas(canvasId) {
     try {
-        currentCanvas = await window.canvasAPI.get(canvasId);
+        const data = await window.canvasAPI.get(canvasId);
+
+        // Validate canvas data before using it
+        if (!validateCanvasData(data)) {
+            console.error('Invalid canvas data for:', canvasId, data);
+            // Fall back to empty canvas with the requested ID
+            currentCanvas = {
+                id: canvasId,
+                name: data && data.name ? data.name : 'Canvas',
+                elements: []
+            };
+        } else {
+            currentCanvas = data;
+        }
+
         window.currentCanvas = currentCanvas;
         await renderCanvas();
     } catch (error) {
@@ -805,7 +845,9 @@ window.canvasCore = {
     // Background color functions
     getCanvasBackgroundColor,
     setCanvasBackgroundColor,
-    showBackgroundColorPicker
+    showBackgroundColorPicker,
+    // Validation
+    validateCanvasData
 };
 
 // Expose functions globally for backward compatibility
