@@ -614,56 +614,6 @@ function convertImageToDataUrl(url) {
     });
 }
 
-async function embedImagesInSVG(svgElement) {
-    const images = svgElement.querySelectorAll('image');
-    const promises = Array.from(images).map(async (img) => {
-        const href = img.getAttribute('href') || img.getAttribute('xlink:href');
-        if (href && !href.startsWith('data:')) {
-            try {
-                // Convert relative URLs to absolute
-                const absoluteUrl = new URL(href, window.location.origin).href;
-                const dataUrl = await imageToDataUrl(absoluteUrl);
-                img.setAttribute('href', dataUrl);
-                img.removeAttribute('xlink:href');
-            } catch (error) {
-                console.warn('Failed to embed image:', href, error);
-            }
-        }
-    });
-    
-    await Promise.all(promises);
-}
-
-function imageToDataUrl(url) {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            canvas.width = img.naturalWidth;
-            canvas.height = img.naturalHeight;
-            
-            ctx.drawImage(img, 0, 0);
-            
-            try {
-                const dataUrl = canvas.toDataURL('image/png');
-                resolve(dataUrl);
-            } catch (error) {
-                reject(error);
-            }
-        };
-        
-        img.onerror = () => {
-            reject(new Error(`Failed to load image: ${url}`));
-        };
-        
-        img.src = url;
-    });
-}
-
 function getCurrentCanvasName() {
     // Try to get canvas name from breadcrumb or use current canvas ID
     const breadcrumb = document.getElementById('breadcrumb');
@@ -725,7 +675,7 @@ async function exportCanvasToJSON() {
                         try {
                             // Convert relative URLs to absolute
                             const absoluteUrl = new URL(element.src, window.location.origin).href;
-                            const base64Data = await imageToDataUrl(absoluteUrl);
+                            const base64Data = await convertImageToDataUrl(absoluteUrl);
                             return {
                                 ...element,
                                 src: base64Data
